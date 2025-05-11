@@ -1,3 +1,7 @@
+let socket;
+let playerId;
+let allPlayers = {}; // allPlayers = { playerId: { row, col } }
+
 // Get access to the root div#board element on index.html page
 // Which will be later populated with rows of hexagons
 const board = document.getElementById("board");
@@ -20,10 +24,13 @@ function createHex(row, col) {
   // Add click event to handle selection and movement
   hex.addEventListener("click", () => {
     if (hex.classList.contains("highlight")) {
-      // Move character to highlighted hex
       moveCharacter(row, col);
+      socket.send(JSON.stringify({
+        type: "move",
+        id: playerId,
+        position: { row, col }
+      }));
     } else {
-      // Highlight path if this is a valid move
       highlightPath(row, col);
     }
   });
@@ -31,25 +38,28 @@ function createHex(row, col) {
   return hex;
 }
 
-// This function is used to move character from the starting point to desired destination
-function moveCharacter(row, col) {
-  // Remove character class from current position
-  const oldHex = document.querySelector(
-    `.hex[data-row="${currentCharacterPosition.row}"][data-col="${currentCharacterPosition.col}"]`
-  );
-  oldHex.classList.remove("character");
+// This function is used to move character of the player with the given id
+// from the starting point to desired destination
+function moveCharacter(row, col, id = playerId) {
+  const old = allPlayers[id];
+  if (old) {
+    const oldHex = document.querySelector(
+      `.hex[data-row="${old.row}"][data-col="${old.col}"]`
+    );
+    if (oldHex) oldHex.classList.remove("character");
+  }
 
-  // Update the character's position
-  currentCharacterPosition = { row, col };
+  allPlayers[id] = { row, col };
 
-  // Add character to new position
   const newHex = document.querySelector(
     `.hex[data-row="${row}"][data-col="${col}"]`
   );
-  newHex.classList.add("character");
+  if (newHex) newHex.classList.add("character");
 
-  // Clear path highlighting once we've done moving character
-  clearPathHighlights();
+  if (id === playerId) {
+    currentCharacterPosition = { row, col };
+    clearPathHighlights();
+  }
 }
 
 function highlightPath(row, col) {
@@ -127,6 +137,42 @@ function setupBoard() {
   }
 }
 
-// Starting endpoint of the js file
-setupBoard();
-moveCharacter(0, 0);
+// This function is used to create a WebSocket connection on the browser window load
+// and listen for incoming messages
+window.onload = () => {
+  socket = new WebSocket(`ws://${window.location.host}`);
+
+  socket.onmessage = (event) => {
+    const message = JSON.parse(event.data);
+
+    // On init message we setup the board and move all players to their starting positions
+    if (message.type === "init") {
+      playerId = message.id;
+      allPlayers = message.allPlayers;
+      setupBoard();
+
+      for (const [id, position] of Object.entries(allPlayers)) {
+        moveCharacter(position.row, position.col, id);
+      }
+    }
+
+    // On update message we move the character to the new position and update the allPlayers object
+    if (message.type === "update") {
+      allPlayers[message.id] = message.position;
+      moveCharacter(message.position.row, message.position.col, message.id);
+    }
+
+    // On remove message we remove the character from the board and delete it from allPlayers object
+    // This is used when a player disconnects and we need to remove their character from the game
+    if (message.type === "remove") {
+      const oldPosition = allPlayers[message.id];
+      if (oldPosition) {
+        const oldHex = document.querySelector(
+          `.hex[data-row="${oldPosition.row}"][data-col="${oldPosition.col}"]`
+        );
+        if (oldHex) oldHex.classList.remove("character");
+        delete allPlayers[message.id];
+      }
+    }
+  };
+};
