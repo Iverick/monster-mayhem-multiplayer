@@ -16,6 +16,7 @@ app.get("/game", (req, res) => {
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
+let nextPlayerId = 1;
 const gameState = {
   // Maps playerId to { row, col }
   // Object structure is:
@@ -29,7 +30,7 @@ const gameState = {
 wss.on("connection", (ws) => {
   console.log("New WebSocket connection");
 
-  const playerId = ws._socket.remotePort;
+  const playerId = nextPlayerId++;
   const startPosition = Object.keys(gameState.players).length % 2 === 0
     // If it's a first player start in the top of the grid
     ? { row: 0, col: 0 }
@@ -55,6 +56,7 @@ wss.on("connection", (ws) => {
   // Message WebSocket handler
   ws.on("message", (message) => {
     console.log("Received:", message);
+    console.log("gameState object:", gameState);
 
     const messageData = JSON.parse(message);
 

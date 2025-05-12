@@ -1,4 +1,3 @@
-let socket;
 let playerId;
 // This variable is used to store all players and their positions
 // Example of the object structure:
@@ -13,6 +12,8 @@ const board = document.getElementById("board");
 // Setup number of rows and columns
 const rows = 10;
 const cols = 10;
+
+const socket = new WebSocket(`ws://${window.location.host}`);
 
 // This function used to create a single hex div element
 function createHex(row, col) {
@@ -43,11 +44,13 @@ function createHex(row, col) {
 // from the starting point to desired destination
 function moveCharacter(row, col, id = playerId) {
   const oldPosition = allPlayers[id];
+  const cssClass = id % 2 === 0 ? "player-even" : "player-odd";
+
   if (oldPosition) {
     const oldHex = document.querySelector(
       `.hex[data-row="${oldPosition.row}"][data-col="${oldPosition.col}"]`
     );
-    if (oldHex) oldHex.classList.remove("character");
+    if (oldHex) oldHex.classList.remove(cssClass);
   }
 
   allPlayers[id] = { row, col };
@@ -55,7 +58,7 @@ function moveCharacter(row, col, id = playerId) {
   const newHex = document.querySelector(
     `.hex[data-row="${row}"][data-col="${col}"]`
   );
-  if (newHex) newHex.classList.add("character");
+  if (newHex) newHex.classList.add(cssClass);
 
   if (id === playerId) {
     clearPathHighlights();
@@ -142,8 +145,6 @@ function setupBoard() {
 // This function is used to create a WebSocket connection on the browser window load
 // and listen for incoming messages
 window.onload = () => {
-  socket = new WebSocket(`ws://${window.location.host}`);
-
   socket.onmessage = (event) => {
     const message = JSON.parse(event.data);
 
@@ -162,6 +163,7 @@ window.onload = () => {
     }
 
     // On update message we move the character to the new position and update the allPlayers object
+    console.log("Update message received", message);
     if (message.type === "update") {
       allPlayers[message.id] = message.position;
       moveCharacter(message.position.row, message.position.col, message.id);

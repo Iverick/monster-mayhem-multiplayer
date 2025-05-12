@@ -40,6 +40,9 @@ body {
   color: white;
 }
 
+.hex.player-even { background-color: red; }
+.hex.player-odd { background-color: blue; }
+
 .hex.highlight {
   background-color: #ffeb3b;
   opacity: 0.8;
