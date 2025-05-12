@@ -1,13 +1,14 @@
 let socket;
 let playerId;
-let allPlayers = {}; // allPlayers = { playerId: { row, col } }
+// This variable is used to store all players and their positions
+// Example of the object structure:
+// allPlayers = { playerId: { row, col } }
+// allPlayers = { 51325: { 0, 0 }, 51326: { 9, 9 } }
+let allPlayers = {}; 
 
 // Get access to the root div#board element on index.html page
 // Which will be later populated with rows of hexagons
 const board = document.getElementById("board");
-
-// Setup initial position of the character
-let currentCharacterPosition = { row: 0, col: 0 };
 
 // Setup number of rows and columns
 const rows = 10;
@@ -41,10 +42,10 @@ function createHex(row, col) {
 // This function is used to move character of the player with the given id
 // from the starting point to desired destination
 function moveCharacter(row, col, id = playerId) {
-  const old = allPlayers[id];
-  if (old) {
+  const oldPosition = allPlayers[id];
+  if (oldPosition) {
     const oldHex = document.querySelector(
-      `.hex[data-row="${old.row}"][data-col="${old.col}"]`
+      `.hex[data-row="${oldPosition.row}"][data-col="${oldPosition.col}"]`
     );
     if (oldHex) oldHex.classList.remove("character");
   }
@@ -57,7 +58,6 @@ function moveCharacter(row, col, id = playerId) {
   if (newHex) newHex.classList.add("character");
 
   if (id === playerId) {
-    currentCharacterPosition = { row, col };
     clearPathHighlights();
   }
 }
@@ -66,8 +66,10 @@ function highlightPath(row, col) {
   // Clear any previous highlights
   clearPathHighlights();
 
-  // Highlight a path from the starting point to the end
-  const path = calculatePath(currentCharacterPosition, { row, col });
+  // Get the current position of the player from allPlayers object
+  // and calculate the path to the new position
+  const currentPosition = allPlayers[playerId];
+  const path = calculatePath(currentPosition, { row, col });
   // Select every hex from the path and apply a highlight class to them
   path.forEach((hex) => {
     const hexElement = document.querySelector(
@@ -147,8 +149,11 @@ window.onload = () => {
 
     // On init message we setup the board and move all players to their starting positions
     if (message.type === "init") {
+      console.log("Init message received", message);
       playerId = message.id;
       allPlayers = message.allPlayers;
+      // Setup the board with hexagons
+      // and add the character to the starting position
       setupBoard();
 
       for (const [id, position] of Object.entries(allPlayers)) {
