@@ -43,22 +43,19 @@ function createHex(row, col) {
 // This function is used to move character of the player with the given id
 // from the starting point to desired destination
 function moveCharacter(row, col, id = playerId) {
-  const oldPosition = allPlayers[id];
-  const cssClass = id % 2 === 0 ? "player-even" : "player-odd";
+  // Remove character class from the old position
+  const hexes = document.querySelectorAll(".hex");
+  hexes.forEach(hex => {
+    if (hex.classList.contains(`player-${id % 2 === 0 ? 'even' : 'odd'}`)) {
+      hex.classList.remove("character", "player-even", "player-odd");
+    }
+  });
 
-  if (oldPosition) {
-    const oldHex = document.querySelector(
-      `.hex[data-row="${oldPosition.row}"][data-col="${oldPosition.col}"]`
-    );
-    if (oldHex) oldHex.classList.remove(cssClass);
+  // Find the hexagon at the new position and add character class to it
+  const hex = document.querySelector(`.hex[data-row="${row}"][data-col="${col}"]`);
+  if (hex) {
+    hex.classList.add("character", id % 2 === 0 ? "player-even" : "player-odd");
   }
-
-  allPlayers[id] = { row, col };
-
-  const newHex = document.querySelector(
-    `.hex[data-row="${row}"][data-col="${col}"]`
-  );
-  if (newHex) newHex.classList.add(cssClass);
 
   if (id === playerId) {
     clearPathHighlights();
@@ -142,29 +139,39 @@ function setupBoard() {
   }
 }
 
+// This function is used to draw all players on the board
+function drawAllPlayers() {
+  for (const [id, position] of Object.entries(allPlayers)) {
+    moveCharacter(position.row, position.col, id);
+  }
+}
+
 // This function is used to create a WebSocket connection on the browser window load
 // and listen for incoming messages
 window.onload = () => {
   socket.onmessage = (event) => {
     const message = JSON.parse(event.data);
 
-    // On init message we setup the board and move all players to their starting positions
+    // On init message we setup the board and move player's character to its starting positions
     if (message.type === "init") {
       console.log("Init message received", message);
       playerId = message.id;
       allPlayers = message.allPlayers;
-      // Setup the board with hexagons
-      // and add the character to the starting position
+      // Setup the board with hexagons and add the character for every player to the starting position
       setupBoard();
+      drawAllPlayers();
+    }
 
-      for (const [id, position] of Object.entries(allPlayers)) {
-        moveCharacter(position.row, position.col, id);
-      }
+    // On sync message we update the allPlayers object and make sure all players drawn on the board
+    if (message.type === "sync") {
+      console.log("Sync received", message);
+      allPlayers = message.allPlayers;
+      drawAllPlayers();
     }
 
     // On update message we move the character to the new position and update the allPlayers object
-    console.log("Update message received", message);
     if (message.type === "update") {
+      console.log("Update message received", message);
       allPlayers[message.id] = message.position;
       moveCharacter(message.position.row, message.position.col, message.id);
     }

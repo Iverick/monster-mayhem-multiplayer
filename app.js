@@ -46,12 +46,11 @@ wss.on("connection", (ws) => {
     allPlayers: gameState.players,
   }));
 
-  // Notify other players of the new player
-  broadcastExcept(ws, JSON.stringify({
-    type: "update",
-    id: playerId,
-    position: startPosition,
-  }));
+  // Notify other players of the new player with sync message
+  broadcastExcept(ws, {
+    type: "sync",
+    allPlayers: gameState.players,
+  });
 
   // Message WebSocket handler
   ws.on("message", (message) => {
@@ -68,11 +67,11 @@ wss.on("connection", (ws) => {
       gameState.players[messageData.id] = messageData.position;
 
       // Broadcast the new move to all clients
-      broadcastAll(JSON.stringify({
+      broadcastAll({
         type: "update",
         id: messageData.id,
         position: messageData.position,
-      }));
+      });
     }
   });
 
