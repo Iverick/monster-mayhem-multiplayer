@@ -58,6 +58,15 @@ body {
   background-color: #f4f4f4;
 }
 
+.player-stats {
+  position: absolute;
+  top: 70px;
+  left: 20px;
+  background-color: #f4f4f4;
+  padding: 10px 20px;
+  border-radius: 5px;
+}
+
 .board {
   margin-top: 60px;
   gap: 5px;

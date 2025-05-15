@@ -43,7 +43,7 @@ app.use("/", authRoutes);
 app.get("/game", (req, res) => {
   if (!(req.isAuthenticated())) return res.redirect("/login");
 
-  res.render("game.ejs");
+  res.render("game.ejs", { user: req.user });
 });
 
 // WebSocket server setup
