@@ -7,6 +7,13 @@
     <link rel="stylesheet" href="/styles/game.css" />
   </head>
   <body>
+    <nav class="navbar">
+      <a class="logo">Monster Mayhem</a>
+      <form action="/logout" method="POST" class="logout-form">
+        <button class="logout-button" type="submit">Logout</button>
+      </form>
+    </nav>
+
     <div class="board" id="board"></div>
     <script src="/js/game.js"></script>
   </body>

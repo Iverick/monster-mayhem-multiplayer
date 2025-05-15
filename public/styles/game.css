@@ -1,3 +1,53 @@
+/* Reset some default styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Style the navigation bar */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #333;
+  padding: 10px 20px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+}
+
+/* Style the logo */
+.navbar .logo {
+  color: white;
+  text-decoration: none;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+/* Style the logout form */
+.logout-form {
+  margin: 0;
+}
+
+/* Style the logout button */
+.logout-button {
+  background-color: #e85c29;
+  border: none;
+  color: white;
+  padding: 8px 16px;
+  font-size: 1rem;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: background-color 0.3s;
+}
+
+.logout-button:hover {
+  background-color: #d14c1e;
+}
+
 body {
   font-family: Arial, sans-serif;
   display: flex;
@@ -9,6 +59,9 @@ body {
 }
 
 .board {
+  margin-top: 60px;
+  gap: 5px;
+  padding: 20px;
 }
 
 .row {
