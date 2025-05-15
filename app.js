@@ -1,14 +1,48 @@
 const express = require("express");
 const http = require("http");
 const WebSocket = require("ws");
-const { PORT } = require("./config/config");
+const mongoose = require("mongoose");
+const session = require("express-session");
+const MongoStore = require("connect-mongo");
+
+const passport = require("./config/passportInit.js");
+const { PORT, MONGO_URI, SESSION_SECRET_KEY } = require("./config/config");
+const authRoutes = require("./routes/authRoutes.js");
 
 const app = express();
 
+// Connect to MongoDB
+mongoose.connect(MONGO_URI)
+  .then(() => console.log("MongoDB connected"))
+  .catch(err => console.log(err));
+
+// Session setup
+// Manage authentication and cookies
+app.use(session({
+  secret: SESSION_SECRET_KEY,
+  resave: false,
+  saveUninitialized: false,
+  store: MongoStore.create({ mongoUrl: MONGO_URI })
+}));
+
+// Middleware setup
+// Initialize passport and use it for session management
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Allows to parse JSON and URL-encoded data
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Setup template engine
 app.set("view engine", "ejs");
 app.use(express.static("public"));
 
+// Routes setup
+app.use("/", authRoutes);
 app.get("/game", (req, res) => {
+  if (!(req.isAuthenticated())) return res.redirect("/login");
+
   res.render("game.ejs");
 });
 
