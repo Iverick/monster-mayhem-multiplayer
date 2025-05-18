@@ -61,8 +61,11 @@ const gameState = {
   players: {}
 };
 
+let connectedClients = [];
+
 wss.on("connection", (ws) => {
   console.log("New WebSocket connection");
+  connectedClients.push(ws);
 
   const playerId = nextPlayerId++;
   const startPosition = Object.keys(gameState.players).length % 2 === 0
@@ -92,6 +95,12 @@ wss.on("connection", (ws) => {
     console.log("gameState object:", gameState);
 
     const messageData = JSON.parse(message);
+
+    // Notify all players that the game is ready
+    if (messageData.type === "start") {
+      broadcastAll({ type: "start" });
+      console.log("Game started");
+    }
 
     // Handle player movement
     // Call broadcastAll to update gameState object with the new position and pass this object to all clients

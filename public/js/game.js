@@ -1,4 +1,4 @@
-let playerId;
+let playerId = null;
 // This variable is used to store all players and their positions
 // Example of the object structure:
 // allPlayers = { playerId: { row, col } }
@@ -8,6 +8,9 @@ let allPlayers = {};
 // Get access to the root div#board element on index.html page
 // Which will be later populated with rows of hexagons
 const board = document.getElementById("board");
+
+const startButton = document.getElementById('start-button');
+const waitingMessage = document.getElementById('waiting-message');
 
 // Setup number of rows and columns
 const rows = 10;
@@ -146,27 +149,56 @@ function drawAllPlayers() {
   }
 }
 
+// This function is used to update the UI based on the number of players
+// If there are two players, the start button is enabled and waiting message is hidden
+function toggleControlsOverlay() {
+  const playerCount = Object.keys(allPlayers).length;
+  if (playerCount >= 2) {
+    startButton.disabled = false;
+    startButton.classList.add('enabled');
+    waitingMessage.textContent = 'Ready to start the game!';
+  } else {
+    startButton.disabled = true;
+    startButton.classList.remove('enabled');
+    waitingMessage.textContent = 'Waiting for another player to join...';
+  }
+}
+
+
+// startButton click handler that sends a message to the server to start the game
+startButton.addEventListener("click", () => {
+  socket.send(JSON.stringify({ type: "start", id: playerId }));
+  overlay.style.display = "none";
+});
+
 // This function is used to create a WebSocket connection on the browser window load
 // and listen for incoming messages
 window.onload = () => {
   socket.onmessage = (event) => {
+    console.log(allPlayers);
     const message = JSON.parse(event.data);
+
+    if (message.type === "start") {
+      //Remove overlay here so it no longer displayed for all players
+      document.getElementById('game-controls').style.display = 'none';
+      // Setup the board with hexagons and add the character for every player to the starting position
+      setupBoard();
+      drawAllPlayers();
+    }
 
     // On init message we setup the board and move player's character to its starting positions
     if (message.type === "init") {
       console.log("Init message received", message);
       playerId = message.id;
       allPlayers = message.allPlayers;
-      // Setup the board with hexagons and add the character for every player to the starting position
-      setupBoard();
-      drawAllPlayers();
+      toggleControlsOverlay();
     }
 
     // On sync message we update the allPlayers object and make sure all players drawn on the board
     if (message.type === "sync") {
       console.log("Sync received", message);
       allPlayers = message.allPlayers;
-      drawAllPlayers();
+      toggleControlsOverlay();
     }
 
     // On update message we move the character to the new position and update the allPlayers object

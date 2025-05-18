@@ -14,6 +14,11 @@
       </form>
     </nav>
 
+    <div id="game-controls" class="overlay">
+      <p id="waiting-message">Waiting for another player to join...</p>
+      <button id="start-button" disabled>Start Game</button>
+    </div>
+
     <div class="player-stats">
       <h3><%= user.username %></h3>
       <p>Games Played: <%= user.games %></p>
