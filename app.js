@@ -8,6 +8,8 @@ const MongoStore = require("connect-mongo");
 const passport = require("./config/passportInit.js");
 const { PORT, MONGO_URI, SESSION_SECRET_KEY } = require("./config/config");
 const authRoutes = require("./routes/authRoutes.js");
+const User = require("./models/User.js");
+const { getUsernameById, broadcastAll, broadcastExcept } = require("./helpers/serverHelpers.js");
 
 const app = express();
 
@@ -61,11 +63,13 @@ const gameState = {
   players: {}
 };
 
-let connectedClients = [];
+// Maps playerId to username
+// playerIdToUsername: {
+//   playerId1: "username1"
+const playerIdToUsername = {};
 
 wss.on("connection", (ws) => {
   console.log("New WebSocket connection");
-  connectedClients.push(ws);
 
   const playerId = nextPlayerId++;
   const startPosition = Object.keys(gameState.players).length % 2 === 0
@@ -87,25 +91,38 @@ wss.on("connection", (ws) => {
   broadcastExcept(ws, {
     type: "sync",
     allPlayers: gameState.players,
-  });
+  }, wss);
 
   // Message WebSocket handler
-  ws.on("message", (message) => {
+  ws.on("message", async (message) => {
     console.log("Received:", message);
     console.log("gameState object:", gameState);
 
     const messageData = JSON.parse(message);
 
-    // Notify all players that the game is ready
+    if (messageData.type === "identify") {
+      const username = messageData.username;
+      playerIdToUsername[playerId] = username;
+    }
+
+    // Notify all players that the game is ready and increase the game count for participants
     if (messageData.type === "start") {
-      broadcastAll({ type: "start" });
-      console.log("Game started");
+      broadcastAll({ type: "start" }, wss);
+
+      for (const id in gameState.players) {
+        const username = getUsernameById(id, playerIdToUsername);
+        if (username) {
+          await User.findOneAndUpdate(
+            { username },
+            { $inc: { games: 1 }},
+          )
+        }
+      }
     }
 
     // Handle player movement
     // Call broadcastAll to update gameState object with the new position and pass this object to all clients
     if (messageData.type === "move") {
-      console.log("allPlayers", gameState);
       console.log("Player moved:", messageData);
       gameState.players[messageData.id] = messageData.position;
 
@@ -114,7 +131,7 @@ wss.on("connection", (ws) => {
         type: "update",
         id: messageData.id,
         position: messageData.position,
-      });
+      }, wss);
     }
   });
 
@@ -122,31 +139,9 @@ wss.on("connection", (ws) => {
   // Call broadcastAll to remove the player from all clients passing the playerId
   ws.on("close", () => {
     delete gameState.players[playerId];
-    broadcastAll({ type: "remove", id: playerId });
+    broadcastAll({ type: "remove", id: playerId }, wss);
   });
 });
-
-// Helper function to broadcast a message to all clients
-function broadcastAll(message) {
-  const str = JSON.stringify(message);
-
-  wss.clients.forEach((client) => {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(str);
-    }
-  });
-}
-
-// Helper function to broadcast a message to all clients except the sender
-function broadcastExcept(exceptClient, message) {
-  const str = JSON.stringify(message);
-
-  wss.clients.forEach((client) => {
-    if (client !== exceptClient && client.readyState === WebSocket.OPEN) {
-      client.send(str);
-    }
-  });
-}
 
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

@@ -222,3 +222,11 @@ window.onload = () => {
     }
   };
 };
+
+socket.onopen = () => {
+  console.log("user: " + username);
+  socket.send(JSON.stringify({
+    type: "identify",
+    username: username,
+  }));
+}
