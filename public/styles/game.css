@@ -136,9 +136,6 @@ body {
   color: white;
 }
 
-.hex.player-even { background-color: red; }
-.hex.player-odd { background-color: blue; }
-
 .hex.highlight {
   background-color: #ffeb3b;
   opacity: 0.8;
@@ -156,4 +153,29 @@ body {
 .hex.character:hover {
   background-color: #ffa68a;
   color: white;
+}
+
+.monster {
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+.monster-vampire {
+  color: red;
+}
+
+.monster-werewolf {
+  color: green;
+}
+
+.monster-ghost {
+  color: purple;
+}
+
+.player-even {
+  background-color: red;
+}
+
+.player-odd {
+  background-color: blue;
 }

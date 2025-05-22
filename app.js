@@ -111,17 +111,17 @@ wss.on("connection", (ws) => {
     // Notify all players that the game is ready and increase the game count for participants
     if (messageData.type === "start") {
       // Use fixed cols for simplicity
-      const spawnCols = [2, 5, 7]; 
+      const spawnRows = [2, 5, 7]; 
 
       // The following code is used to generate the monsters and their location for each player
       // and store them in the gameState object
       for (const playerId in gameState.players) {
         const isEven = parseInt(playerId) % 2 === 0;
-        const row = isEven ? 0 : 9;
+        const col = isEven ? 0 : 9;
 
         monsterTypes.forEach((type, index) => {
           const monsterId = `m_${playerId}-${type}`;
-          const col = spawnCols[index];
+          const row = spawnRows[index];
           gameState.monsters[monsterId] = {
             playerId,
             type,

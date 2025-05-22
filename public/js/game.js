@@ -3,7 +3,9 @@ let playerId = null;
 // Example of the object structure:
 // allPlayers = { playerId: { row, col } }
 // allPlayers = { 51325: { 0, 0 }, 51326: { 9, 9 } }
-let allPlayers = {}; 
+let allPlayers = {};
+// This variable is used to store all monsters and their positions received from the server
+let monsters = {};
 
 // Get access to the root div#board element on index.html page
 // Which will be later populated with rows of hexagons
@@ -142,10 +144,19 @@ function setupBoard() {
   }
 }
 
-// This function is used to draw all players on the board
-function drawAllPlayers() {
-  for (const [id, position] of Object.entries(allPlayers)) {
-    moveCharacter(position.row, position.col, id);
+// This function is used to draw monsters on the board
+function drawMonsters() {
+  for (const id in monsters) {
+    const { playerId, type, position } = monsters[id];
+    console.log("151: Monster data", `{ownerId: ${playerId}, type: ${type}, position: ${position}}`);
+    const hex = document.querySelector(
+      `.hex[data-row="${position.row}"][data-col="${position.col}"]`
+    );
+    if (hex) {
+      hex.classList.add("monster", `monster-${type}`, `owner-${playerId}`);
+      hex.classList.add(`player-${playerId % 2 === 0 ? 'even' : 'odd'}`)
+      hex.textContent = type[0].toUpperCase();
+    }
   }
 }
 
@@ -168,7 +179,6 @@ function toggleControlsOverlay() {
 // startButton click handler that sends a message to the server to start the game
 startButton.addEventListener("click", () => {
   socket.send(JSON.stringify({ type: "start", id: playerId }));
-  overlay.style.display = "none";
 });
 
 // This function is used to create a WebSocket connection on the browser window load
@@ -179,12 +189,14 @@ window.onload = () => {
     const message = JSON.parse(event.data);
 
     if (message.type === "start") {
+      console.log("197: Start message data object", message.data);
+      monsters = message.data.monsters;
+      console.log("199: Monsters object now", monsters);
       //Remove overlay here so it no longer displayed for all players
       document.getElementById('game-controls').style.display = 'none';
       // Setup the board with hexagons and add the character for every player to the starting position
       setupBoard();
-      console.log("186: Start message received", message);
-      //drawAllPlayers();
+      drawMonsters();
     }
 
     // On init message we setup the board and move player's character to its starting positions
