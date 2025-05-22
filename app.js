@@ -52,40 +52,35 @@ app.get("/game", (req, res) => {
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
+// Variables required for the game setup
 let nextPlayerId = 1;
 const gameState = {
   // Maps playerId to { row, col }
   // Object structure is:
   // players: {
-  //   playerId1: { row: 0, col: 0 },
-  //   playerId2: { row: 9, col: 9 },
+  //   "playerId1": "username1",
+  //   "playerId2": "username2",
+  // },
+  // monsters: {
+  //   "m_playerId1-monsterType": {
+  //     playerId: "playerId1",
+  //     type: "monsterType",
+  //     position: {
+  //       row: 0,
+  //       col: 0,
+  //     }
+  //   }
   // }
-  players: {}
+  players: {},
+  monsters: {},
 };
 
-// Maps playerId to username
-// playerIdToUsername: {
-//   playerId1: "username1"
-const playerIdToUsername = {};
+const monsterTypes = ['vampire', 'werewolf', 'ghost'];
 
 wss.on("connection", (ws) => {
   console.log("New WebSocket connection");
 
   const playerId = nextPlayerId++;
-  const startPosition = Object.keys(gameState.players).length % 2 === 0
-    // If it's a first player start in the top of the grid
-    ? { row: 0, col: 0 }
-    // Second player starts in the bottom of the grid
-    : { row: 9, col: 9 };
-
-  gameState.players[playerId] = startPosition;
-  
-  // Send full game state to the newly connected player
-  ws.send(JSON.stringify({ 
-    type: "init",
-    id: playerId,
-    allPlayers: gameState.players,
-  }));
 
   // Notify other players of the new player with sync message
   broadcastExcept(ws, {
@@ -101,16 +96,47 @@ wss.on("connection", (ws) => {
     const messageData = JSON.parse(message);
 
     if (messageData.type === "identify") {
+      console.log("94: Identify message received " + messageData.username);
       const username = messageData.username;
-      playerIdToUsername[playerId] = username;
+      gameState.players[playerId] = username;
+
+      // Send init message after registering the player and assingintg the username
+      ws.send(JSON.stringify({ 
+        type: "init",
+        id: playerId,
+        allPlayers: gameState.players,
+      }));
     }
 
     // Notify all players that the game is ready and increase the game count for participants
     if (messageData.type === "start") {
-      broadcastAll({ type: "start" }, wss);
+      // Use fixed cols for simplicity
+      const spawnCols = [2, 5, 7]; 
 
-      for (const id in gameState.players) {
-        const username = getUsernameById(id, playerIdToUsername);
+      // The following code is used to generate the monsters and their location for each player
+      // and store them in the gameState object
+      for (const playerId in gameState.players) {
+        const isEven = parseInt(playerId) % 2 === 0;
+        const row = isEven ? 0 : 9;
+
+        monsterTypes.forEach((type, index) => {
+          const monsterId = `m_${playerId}-${type}`;
+          const col = spawnCols[index];
+          gameState.monsters[monsterId] = {
+            playerId,
+            type,
+            position: {
+              row,
+              col,
+            }
+          };
+        })
+      }
+
+      // Increment the game count for each player
+      for (const playerId in gameState.players) {
+        console.log("116: Check username for id: ", gameState.players[playerId]);
+        const username = gameState.players[playerId];
         if (username) {
           await User.findOneAndUpdate(
             { username },
@@ -118,6 +144,15 @@ wss.on("connection", (ws) => {
           )
         }
       }
+      
+      // Send start message to all players with the gameState object
+      broadcastAll({ 
+        type: "start",
+        data: {
+          players: gameState.players,
+          monsters: gameState.monsters
+        },
+      }, wss);
     }
 
     // Handle player movement

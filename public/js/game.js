@@ -175,7 +175,7 @@ startButton.addEventListener("click", () => {
 // and listen for incoming messages
 window.onload = () => {
   socket.onmessage = (event) => {
-    console.log(allPlayers);
+    console.log("line 178: ", allPlayers.length);
     const message = JSON.parse(event.data);
 
     if (message.type === "start") {
@@ -183,7 +183,8 @@ window.onload = () => {
       document.getElementById('game-controls').style.display = 'none';
       // Setup the board with hexagons and add the character for every player to the starting position
       setupBoard();
-      drawAllPlayers();
+      console.log("186: Start message received", message);
+      //drawAllPlayers();
     }
 
     // On init message we setup the board and move player's character to its starting positions
@@ -224,7 +225,7 @@ window.onload = () => {
 };
 
 socket.onopen = () => {
-  console.log("user: " + username);
+  console.log("227: user: " + username);
   socket.send(JSON.stringify({
     type: "identify",
     username: username,
