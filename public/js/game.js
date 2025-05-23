@@ -1,11 +1,12 @@
-let playerId = null;
+let userId = null;
 // This variable is used to store all players and their positions
 // Example of the object structure:
-// allPlayers = { playerId: { row, col } }
+// allPlayers = { userId: { row, col } }
 // allPlayers = { 51325: { 0, 0 }, 51326: { 9, 9 } }
 let allPlayers = {};
 // This variable is used to store all monsters and their positions received from the server
 let monsters = {};
+let selectedMonsterId = null;
 
 // Get access to the root div#board element on index.html page
 // Which will be later populated with rows of hexagons
@@ -34,26 +35,26 @@ function createHex(row, col) {
   hex.dataset.col = col;
   hex.textContent = ``;
 
-  // Add click event to handle selection and movement
-  hex.addEventListener("click", () => {
-    if (hex.classList.contains("highlight")) {
-      moveCharacter(row, col);
-      socket.send(JSON.stringify({
-        type: "move",
-        id: playerId,
-        position: { row, col }
-      }));
-    } else {
-      highlightPath(row, col);
-    }
-  });
+  // // Add click event to handle selection and movement
+  // hex.addEventListener("click", () => {
+  //   if (hex.classList.contains("highlight")) {
+  //     moveCharacter(row, col);
+  //     socket.send(JSON.stringify({
+  //       type: "move",
+  //       id: userId,
+  //       position: { row, col }
+  //     }));
+  //   } else {
+  //     highlightPath(row, col);
+  //   }
+  // });
 
   return hex;
 }
 
 // This function is used to move character of the player with the given id
 // from the starting point to desired destination
-function moveCharacter(row, col, id = playerId) {
+function moveCharacter(row, col, id = userId) {
   // Remove character class from the old position
   const hexes = document.querySelectorAll(".hex");
   hexes.forEach(hex => {
@@ -68,7 +69,7 @@ function moveCharacter(row, col, id = playerId) {
     hex.classList.add("character", id % 2 === 0 ? "player-even" : "player-odd");
   }
 
-  if (id === playerId) {
+  if (id === userId) {
     clearPathHighlights();
   }
 }
@@ -79,7 +80,7 @@ function highlightPath(row, col) {
 
   // Get the current position of the player from allPlayers object
   // and calculate the path to the new position
-  const currentPosition = allPlayers[playerId];
+  const currentPosition = allPlayers[userId];
   const path = calculatePath(currentPosition, { row, col });
   // Select every hex from the path and apply a highlight class to them
   path.forEach((hex) => {
@@ -153,15 +154,48 @@ function setupBoard() {
 // This function is used to draw monsters on the board
 function drawMonsters() {
   for (const id in monsters) {
-    const { playerId, type, position } = monsters[id];
-    console.log("151: Monster data", `{ownerId: ${playerId}, type: ${type}, position: ${position}}`);
+    const { playerId: ownerId, type, position } = monsters[id];
+    console.log("151: Monster data", `{ownerId: ${ownerId}, type: ${type}, position: ${position}}`);
     const hex = document.querySelector(
       `.hex[data-row="${position.row}"][data-col="${position.col}"]`
     );
     if (hex) {
-      hex.classList.add("monster", `player-${playerId % 2 === 0 ? 'even' : 'odd'}`);
+      hex.classList.add("monster", `player-${ownerId % 2 === 0 ? 'even' : 'odd'}`);
       hex.textContent = monsterIcons[type];
     }
+
+    if (parseInt(ownerId) === parseInt(userId)) {
+      hex.addEventListener("click", () => selectMonster(id, hex));
+    }
+  }
+}
+
+function selectMonster(monsterId, hex) {
+  // If the monster is already selected, deselect it and return  
+  if (selectedMonsterId === monsterId) {
+    deselectMonster();
+    return;
+  }
+
+  deselectMonster();
+  clearPathHighlights();
+
+  selectedMonsterId = monsterId;
+  console.log("Monster selected", selectedMonsterId);
+  const { position } = monsters[monsterId];
+  hex.classList.add("monster-selected");
+}
+
+function deselectMonster() {
+  // If there is a selected monster, remove the selected class from it
+  // and clear the selectedMonsterId variable
+  if (selectedMonsterId) {
+    const { position } = monsters[selectedMonsterId];
+    const hex = document.querySelector(`.hex[data-row="${position.row}"][data-col="${position.col}"]`);
+    if (hex) {
+      hex.classList.remove("monster-selected");
+    }
+    selectedMonsterId = null;
   }
 }
 
@@ -183,7 +217,7 @@ function toggleControlsOverlay() {
 
 // startButton click handler that sends a message to the server to start the game
 startButton.addEventListener("click", () => {
-  socket.send(JSON.stringify({ type: "start", id: playerId }));
+  socket.send(JSON.stringify({ type: "start", id: userId }));
 });
 
 // This function is used to create a WebSocket connection on the browser window load
@@ -207,7 +241,7 @@ window.onload = () => {
     // On init message we setup the board and move player's character to its starting positions
     if (message.type === "init") {
       console.log("Init message received", message);
-      playerId = message.id;
+      userId = message.id;
       allPlayers = message.allPlayers;
       toggleControlsOverlay();
     }

@@ -162,6 +162,16 @@ body {
   user-select: none;
 }
 
+.monster:hover {
+  background-color: #ffa68a;
+  color: white;
+}
+
+.monster-selected {
+  outline: 2px solid yellow;
+  background-color: #ffa500 !important; 
+  color: white;
+}
 .player-even {
   background-color: red;
 }
