@@ -173,6 +173,11 @@ body {
   background-color: #ffa500 !important; 
   color: white;
 }
+
+.monster-icon {
+  pointer-events: none;
+}
+
 .player-even {
   background-color: red;
 }

@@ -129,21 +129,48 @@ function setupBoard() {
 
 // This function is used to draw monsters on the board
 function drawMonsters() {
+  clearMonsters();
+
   for (const id in monsters) {
     const { playerId: ownerId, type, position } = monsters[id];
-    console.log("151: Monster data", `{ownerId: ${ownerId}, type: ${type}, position: ${position}}`);
+    // console.log("151: Monster data", `{ownerId: ${ownerId}, type: ${type}, position: ${position}}`);
     const hex = document.querySelector(
       `.hex[data-row="${position.row}"][data-col="${position.col}"]`
     );
     if (hex) {
       hex.classList.add("monster", `player-${ownerId % 2 === 0 ? 'even' : 'odd'}`);
-      hex.textContent = monsterIcons[type];
+      
+      // Create an <i> tag for the monster icon
+      const icon = document.createElement("div");
+      icon.classList.add("monster-icon");
+      icon.dataset.monsterId = id;
+      icon.textContent = monsterIcons[type];
+
+      // Clear previous content and append new icon
+      hex.innerHTML = ""; // Instead of .textContent = ...
+      hex.appendChild(icon);
     }
 
     if (parseInt(ownerId) === parseInt(userId)) {
       hex.addEventListener("click", () => selectMonster(id, hex));
     }
   }
+}
+
+// This function is used to clear all monsters from the board
+function clearMonsters() {
+  const hexes = document.querySelectorAll(".hex");
+
+  hexes.forEach(hex => {
+    // Remove all monster-related classes and icons from the hexagon grid
+    hex.classList.remove("monster", "player-even", "player-odd", "monster-selected");
+
+    // Remove any monster icons
+    const icon = hex.querySelector("div.monster-icon");
+    if (icon) {
+      icon.remove();
+    }
+  });
 }
 
 function selectMonster(monsterId, hex) {
@@ -157,7 +184,7 @@ function selectMonster(monsterId, hex) {
   clearPathHighlights();
 
   selectedMonsterId = monsterId;
-  console.log("Monster selected", selectedMonsterId);
+  // console.log("Monster selected", selectedMonsterId);
   const { position } = monsters[monsterId];
   hex.classList.add("monster-selected");
 
@@ -196,7 +223,7 @@ function highlightValidPath(row, col) {
       const isDiagonal = rowDiff === colDiff && rowDiff <= 2;
       const isValidMove = isStraight || isDiagonal;
 
-      // Highlight hexes that are valid moves
+      // Highlight hexes that are valid moves and assign it click event to move the monster
       if (isValidMove && !isBlockedByEnemy(row, col, r, c)) {
         const hex = document.querySelector(`.hex[data-row="${r}"][data-col="${c}"]`);
         if (hex) {
@@ -244,7 +271,36 @@ function clearPathHighlights() {
 }
 
 function handleMoveClick(event) {
-  console.log("Cliked on hexagon to move the monster: ", event.target);
+  console.log("Move clicked");
+  const target = event.currentTarget;
+  if (!target.classList.contains("highlight-path") || !selectedMonsterId) return;
+
+  // Get the row and column of the clicked hexagon
+  const row = parseInt(target.dataset.row, 10);
+  const col = parseInt(target.dataset.col, 10);
+
+  const monster = monsters[selectedMonsterId];
+
+  // Check if the other player monster is already at the target position
+  const destinationOccupied = Object.values(monsters).find((m) => 
+    m.position.row === row && m.position.col === col && m.playerId !== userId
+  );
+
+  if (destinationOccupied) {
+    console.log("Destination occupied by a monster of another player");
+  } else {
+    // FOR DEBUGGING REMOVE LATER
+    monsters[selectedMonsterId].position = { row, col };
+  }
+
+  
+  // Deselect monster and clear highlights
+  selectedMonsterId = null;
+  clearPathHighlights();
+  deselectMonster();
+
+  // FOR DEBUGGING REMOVE LATER
+  drawMonsters();
 }
 
 // This function is used to update the UI based on the number of players
@@ -272,13 +328,13 @@ startButton.addEventListener("click", () => {
 // and listen for incoming messages
 window.onload = () => {
   socket.onmessage = (event) => {
-    console.log("line 178: ", allPlayers.length);
+    // console.log("line 178: ", allPlayers.length);
     const message = JSON.parse(event.data);
 
     if (message.type === "start") {
-      console.log("197: Start message data object", message.data);
+      // console.log("197: Start message data object", message.data);
       monsters = message.data.monsters;
-      console.log("199: Monsters object now", monsters);
+      // console.log("199: Monsters object now", monsters);
       //Remove overlay here so it no longer displayed for all players
       document.getElementById('game-controls').style.display = 'none';
       // Setup the board with hexagons and add the character for every player to the starting position
