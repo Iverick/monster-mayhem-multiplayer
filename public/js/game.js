@@ -74,30 +74,6 @@ function moveCharacter(row, col, id = userId) {
   }
 }
 
-function highlightPath(row, col) {
-  // Clear any previous highlights
-  clearPathHighlights();
-
-  // Get the current position of the player from allPlayers object
-  // and calculate the path to the new position
-  const currentPosition = allPlayers[userId];
-  const path = calculatePath(currentPosition, { row, col });
-  // Select every hex from the path and apply a highlight class to them
-  path.forEach((hex) => {
-    const hexElement = document.querySelector(
-      `.hex[data-row="${hex.row}"][data-col="${hex.col}"]`
-    );
-    if (hexElement) hexElement.classList.add("highlight");
-  });
-}
-
-function clearPathHighlights() {
-  // Function removes highlight class from hexes once the path has been changed or completed
-  document.querySelectorAll(".hex.highlight").forEach((hex) => {
-    hex.classList.remove("highlight");
-  });
-}
-
 function calculatePath(start, end) {
   // Function calculates path from the starting point to the end
   // Increments row and col values until we reach destination coordinates
@@ -184,11 +160,16 @@ function selectMonster(monsterId, hex) {
   console.log("Monster selected", selectedMonsterId);
   const { position } = monsters[monsterId];
   hex.classList.add("monster-selected");
+
+  // Call the highlightValidPath function to highlight the valid path for the selected monster
+  highlightValidPath(position.row, position.col);
 }
 
 function deselectMonster() {
-  // If there is a selected monster, remove the selected class from it
-  // and clear the selectedMonsterId variable
+  // If there is a selected monster, remove the selected class from it, clear the selectedMonsterId variable
+  // and clear the path highlights
+  clearPathHighlights();
+
   if (selectedMonsterId) {
     const { position } = monsters[selectedMonsterId];
     const hex = document.querySelector(`.hex[data-row="${position.row}"][data-col="${position.col}"]`);
@@ -197,6 +178,73 @@ function deselectMonster() {
     }
     selectedMonsterId = null;
   }
+}
+
+// This function is used to highlight the valid path for the selected monster
+function highlightValidPath(row, col) {
+  // Clear any previous highlights
+  clearPathHighlights();
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      // Setup variable required for finding the valid hexes for diagonal movement
+      const rowDiff = Math.abs(row - r);
+      const colDiff = Math.abs(col - c);
+
+      // The move is valid if it is either straight or up to two squares diagonally
+      const isStraight = r === row || c === col;
+      const isDiagonal = rowDiff === colDiff && rowDiff <= 2;
+      const isValidMove = isStraight || isDiagonal;
+
+      // Highlight hexes that are valid moves
+      if (isValidMove && !isBlockedByEnemy(row, col, r, c)) {
+        const hex = document.querySelector(`.hex[data-row="${r}"][data-col="${c}"]`);
+        if (hex) {
+          hex.classList.add("highlight-path");
+          hex.addEventListener("click", handleMoveClick);
+        }
+      }
+    }
+  }
+}
+
+// This function checks if the path is blocked by an enemy monster
+function isBlockedByEnemy (startRow, startCol, endRow, endCol) {
+  // Find the direction of the movement from the start position to the end position
+  const dRow = Math.sign(endRow - startRow);
+  const dCol = Math.sign(endCol - startCol);
+
+  // Calculate the first hexagon in the path of the start position
+  let r = startRow + dRow;
+  let c = startCol + dCol;
+
+  // Loop through the hexagons in the path until we reach the end position
+  while (r !== endRow || c !== endCol) {
+    // Check if the hexagon is occupied by an enemy monster
+    const occupied = Object.values(monsters).some(monster => 
+      monster.position.row === r &&
+      monster.position.col === c &&
+      parseInt(monster.playerId) !== parseInt(userId)
+    );
+    
+    if (occupied) return true;
+
+    r += dRow;
+    c += dCol;
+  }
+
+  return false;
+};
+
+// Function removes highlight-path class from hexes
+function clearPathHighlights() {
+  document.querySelectorAll(".highlight-path").forEach((hex) => {
+    hex.classList.remove("highlight-path");
+  });
+}
+
+function handleMoveClick(event) {
+  console.log("Cliked on hexagon to move the monster: ", event.target);
 }
 
 // This function is used to update the UI based on the number of players

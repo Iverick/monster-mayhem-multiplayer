@@ -136,9 +136,10 @@ body {
   color: white;
 }
 
-.hex.highlight {
+.hex.highlight-path {
   background-color: #ffeb3b;
   opacity: 0.8;
+  cursor: pointer;
 }
 
 .hex:hover {
