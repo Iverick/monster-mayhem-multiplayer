@@ -156,20 +156,10 @@ body {
 }
 
 .monster {
-  font-weight: bold;
-  font-size: 1.2rem;
-}
-
-.monster-vampire {
-  color: red;
-}
-
-.monster-werewolf {
-  color: green;
-}
-
-.monster-ghost {
-  color: purple;
+  font-size: 24px;
+  text-align: center;
+  line-height: 40px;
+  user-select: none;
 }
 
 .player-even {

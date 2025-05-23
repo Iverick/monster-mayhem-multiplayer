@@ -14,6 +14,12 @@ const board = document.getElementById("board");
 const startButton = document.getElementById('start-button');
 const waitingMessage = document.getElementById('waiting-message');
 
+const monsterIcons = {
+  vampire: "🧛",
+  werewolf: "🐺",
+  ghost: "👻"
+};
+
 // Setup number of rows and columns
 const rows = 10;
 const cols = 10;
@@ -153,9 +159,8 @@ function drawMonsters() {
       `.hex[data-row="${position.row}"][data-col="${position.col}"]`
     );
     if (hex) {
-      hex.classList.add("monster", `monster-${type}`, `owner-${playerId}`);
-      hex.classList.add(`player-${playerId % 2 === 0 ? 'even' : 'odd'}`)
-      hex.textContent = type[0].toUpperCase();
+      hex.classList.add("monster", `player-${playerId % 2 === 0 ? 'even' : 'odd'}`);
+      hex.textContent = monsterIcons[type];
     }
   }
 }
