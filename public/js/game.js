@@ -367,14 +367,8 @@ window.onload = () => {
     // On remove message we remove the character from the board and delete it from allPlayers object
     // This is used when a player disconnects and we need to remove their character from the game
     if (message.type === "remove") {
-      const oldPosition = allPlayers[message.id];
-      if (oldPosition) {
-        const oldHex = document.querySelector(
-          `.hex[data-row="${oldPosition.row}"][data-col="${oldPosition.col}"]`
-        );
-        if (oldHex) oldHex.classList.remove("character");
-        delete allPlayers[message.id];
-      }
+      alert(`Game over! ${message.winner} won. ${message.loser} left the game.`);
+      window.location.href = "/me"; // Redirect to the profile page
     }
   };
 };
