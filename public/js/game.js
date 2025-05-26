@@ -300,7 +300,8 @@ function handleMoveClick(event) {
   clearPathHighlights();
   deselectMonster();
 
-  // FOR DEBUGGING REMOVE LATER
+  // TODO: FOR DEBUGGING REMOVE LATER
+  // EMIT MOVE EVENT TO THE SERVER INSTEAD OF THIS
   drawMonsters();
 }
 

@@ -9,7 +9,7 @@ const passport = require("./config/passportInit.js");
 const { PORT, MONGO_URI, SESSION_SECRET_KEY } = require("./config/config");
 const authRoutes = require("./routes/authRoutes.js");
 const User = require("./models/User.js");
-const { getUsernameById, broadcastAll, broadcastExcept } = require("./helpers/serverHelpers.js");
+const { getUsernameById, broadcastAll, broadcastExcept, handleDisconnection } = require("./helpers/serverHelpers.js");
 const { resolveCollision } = require("./helpers/gameHelpers.js");
 
 const app = express();
@@ -199,39 +199,9 @@ wss.on("connection", (ws, req) => {
   });
 
   // Handle player disconnection
-  // Call broadcastAll to remove the player from all clients passing the playerId
   ws.on("close", async () => {
-    const leftPlayerUsername = gameState.players[playerId];
-
-    console.log(`Player ${playerId} (${leftPlayerUsername}) disconnected`);
-
-    // Remove the left player from the gameState and remove its monsters
-    delete gameState.players[playerId];
-    for (const monsterId in gameState.monsters) {
-      if (gameState.monsters[monsterId].playerId === playerId) {
-        delete gameState.monsters[monsterId];
-      }
-    }
-
-    // Escape the modifying game counts if the game is already over
-    if (gameState.gameOver) return;
-    
-    const remainingPlayerId = Object.keys(gameState.players)[0];
-    const winnerUsername = gameState.players[remainingPlayerId];
-
-    // Modify the number of wins and losses for the players
-    await User.findOneAndUpdate({ username: leftPlayerUsername }, { $inc: { losses: 1 } });
-    await User.findOneAndUpdate({ username: winnerUsername }, { $inc: { wins: 1 } });
-
-    // Mark game as over to prevent double updates
-    gameState.gameOver = true;
-
-    // Notify other player that the game is over
-    broadcastExcept(ws, {
-      type: "remove",
-      winner: winnerUsername,
-      loser: leftPlayerUsername,
-    }, wss);
+    await handleDisconnection(gameState, playerId, ws, wss);
+    // console.log("Updated gameState after player disconnection:", gameState);
   });
 });
 
