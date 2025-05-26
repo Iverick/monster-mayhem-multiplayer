@@ -9,7 +9,7 @@ const passport = require("./config/passportInit.js");
 const { PORT, MONGO_URI, SESSION_SECRET_KEY } = require("./config/config");
 const authRoutes = require("./routes/authRoutes.js");
 const User = require("./models/User.js");
-const { getUsernameById, broadcastAll, broadcastExcept, handleDisconnection } = require("./helpers/serverHelpers.js");
+const { getUsernameById, broadcastAll, broadcastExcept, handleDisconnection, startGame } = require("./helpers/serverHelpers.js");
 const { resolveCollision } = require("./helpers/gameHelpers.js");
 
 const app = express();
@@ -80,8 +80,6 @@ const gameState = {
   gameOver: false,
 };
 
-const monsterTypes = ['vampire', 'werewolf', 'ghost'];
-
 wss.on("connection", (ws, req) => {
   console.log("New WebSocket connection");
 
@@ -113,53 +111,10 @@ wss.on("connection", (ws, req) => {
       }));
     }
 
-    // Notify all players that the game is ready and increase the game count for participants
+    // Handle game start event with a helper function
     if (messageData.type === "start") {
-      // Reset game over state
-      gameState.gameOver = false;
-      // Use fixed cols for simplicity
-      const spawnRows = [2, 5, 7]; 
-
-      // The following code is used to generate the monsters and their location for each player
-      // and store them in the gameState object
-      for (const playerId in gameState.players) {
-        const isEven = parseInt(playerId) % 2 === 0;
-        const col = isEven ? 0 : 9;
-
-        monsterTypes.forEach((type, index) => {
-          const monsterId = `m_${playerId}-${type}`;
-          const row = spawnRows[index];
-          gameState.monsters[monsterId] = {
-            playerId,
-            type,
-            position: {
-              row,
-              col,
-            }
-          };
-        })
-      }
-
-      // Increment the game count for each player
-      for (const playerId in gameState.players) {
-        console.log("116: Check username for id: ", gameState.players[playerId]);
-        const username = gameState.players[playerId];
-        if (username) {
-          await User.findOneAndUpdate(
-            { username },
-            { $inc: { games: 1 }},
-          )
-        }
-      }
-      
-      // Send start message to all players with the gameState object
-      broadcastAll({ 
-        type: "start",
-        data: {
-          players: gameState.players,
-          monsters: gameState.monsters
-        },
-      }, wss);
+      await startGame (gameState, wss);
+      // console.log("gameState after after calling gameStart:", gameState);
     }
 
     // Handle player movement

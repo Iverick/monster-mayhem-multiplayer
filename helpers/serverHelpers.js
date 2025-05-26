@@ -1,6 +1,57 @@
 const WebSocket = require("ws");
 const User = require("../models/User.js");
 
+const monsterTypes = ['vampire', 'werewolf', 'ghost'];
+
+// Helper function that allows start the game by initializing monsters and modifying player data in the database
+async function startGame (gameState, wss) {
+  // Reset game over state
+  gameState.gameOver = false;
+  // Use fixed cols for simplicity
+  const spawnRows = [2, 5, 7]; 
+
+  // The following code is used to generate the monsters and their location for each player
+  // and store them in the gameState object
+  for (const playerId in gameState.players) {
+    const isEven = parseInt(playerId) % 2 === 0;
+    const col = isEven ? 0 : 9;
+
+    monsterTypes.forEach((type, index) => {
+      const monsterId = `m_${playerId}-${type}`;
+      const row = spawnRows[index];
+      gameState.monsters[monsterId] = {
+        playerId,
+        type,
+        position: {
+          row,
+          col,
+        }
+      };
+    })
+  }
+
+  // Increment the game count for each player
+  for (const playerId in gameState.players) {
+    console.log("startGame method: Check username for id: ", gameState.players[playerId]);
+    const username = gameState.players[playerId];
+    if (username) {
+      await User.findOneAndUpdate(
+        { username },
+        { $inc: { games: 1 }},
+      )
+    }
+  }
+      
+  // Send start message to all players with the gameState object
+  broadcastAll({ 
+    type: "start",
+    data: {
+      players: gameState.players,
+      monsters: gameState.monsters
+    },
+  }, wss);
+}
+
 // Helper function to handle player disconnection
 async function handleDisconnection (gameState, playerId, ws, wss) {
   const leftPlayerUsername = gameState.players[playerId];
@@ -64,6 +115,7 @@ function broadcastExcept(exceptClient, message, wss) {
 }
 
 module.exports = {
+  startGame,
   handleDisconnection,
   getUsernameById,
   broadcastAll,
