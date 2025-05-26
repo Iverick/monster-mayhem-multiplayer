@@ -359,12 +359,12 @@ window.onload = () => {
       toggleControlsOverlay();
     }
 
-    // On update message we move the character to the new position and update the allPlayers object
-    // TODO: Modify this event
+    // On update message update the monsters object and redraw monsters on the board
     if (message.type === "update") {
-      console.log("Update message received", message);
-      allPlayers[message.id] = message.position;
-      moveCharacter(message.position.row, message.position.col, message.id);
+      console.log("Update message received: ", message);
+      console.log("Updated monsters object: ", message.gameState.monsters);
+      monsters = message.gameState.monsters;
+      drawMonsters();
     }
 
     // On remove message we remove the character from the board and delete it from allPlayers object

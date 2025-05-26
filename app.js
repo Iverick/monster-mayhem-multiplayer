@@ -57,7 +57,6 @@ const wss = new WebSocket.Server({ server });
 
 // Variables required for the game setup
 let nextPlayerId = 1;
-const gameState = {
   // Maps playerId to { row, col }
   // Object structure is:
   // players: {
@@ -75,6 +74,7 @@ const gameState = {
   //   }
   // },
   // gameOver: false,
+const gameState = {
   players: {},
   monsters: {},
   gameOver: false,
@@ -131,25 +131,34 @@ wss.on("connection", (ws, req) => {
       }, wss);
     }
 
+    // Handle monster collision
     if (messageData.type === "collision") {
       const { attackerId, defenderId } = messageData;
+      // Get the attacker and defender monster objects from gameState by passed IDs
       const attacker = gameState.monsters[attackerId];
       const defender = gameState.monsters[defenderId];
 
       if (!attacker || !defender) return;
 
+      // Get array of monster IDs to be removed
       const result = resolveCollision(attacker, attackerId, defender, defenderId);
 
       // console.log("Collision result:", result);
 
+      // Remove monsters from gameState based on the result
       result.removed.forEach((monsterId) => {
         console.log(`Removing monster: ${monsterId}`);
         delete gameState.monsters[monsterId];
       });
 
       // TODO: Emit update and pass the client updated gameState object
-      
       console.log("193. gameState object after resolver collision:", gameState);
+
+      // Broadcast the new board state to all clients
+      broadcastAll({
+        type: "update",
+        gameState,
+      }, wss);
     }
   });
 
