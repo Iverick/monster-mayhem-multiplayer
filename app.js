@@ -143,18 +143,13 @@ wss.on("connection", (ws, req) => {
       // Get array of monster IDs to be removed
       const { removed, winnerId } = resolveCollision(attacker, attackerId, defender, defenderId);
 
-      // console.log("Collision result:", result);
-
       // Remove monsters from gameState based on the result
       removed.forEach((monsterId) => {
-        // console.log(`Removing monster: ${monsterId}`);
         delete gameState.monsters[monsterId];
       });
 
-      // console.log("156. winnerId:", winnerId);
       // If there is a winner of the monster collision, update its position as passed in the message
       if (winnerId) {
-        // console.log("158. winnerId:", winnerId);
         gameState.monsters[winnerId].position = position;
       }
 

@@ -279,6 +279,8 @@ function handleMoveClick(event) {
   const row = parseInt(target.dataset.row, 10);
   const col = parseInt(target.dataset.col, 10);
 
+  // TODO: Remove this line after implementing update event
+  // gameState modiying logic should be done on the server side ONLY
   monsters[selectedMonsterId].position = { row, col };
 
   // Check if the other player monster is already at the target position
