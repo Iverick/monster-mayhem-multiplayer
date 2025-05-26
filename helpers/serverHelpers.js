@@ -76,6 +76,9 @@ async function handleDisconnection (gameState, playerId, ws, wss) {
   await User.findOneAndUpdate({ username: leftPlayerUsername }, { $inc: { losses: 1 } });
   await User.findOneAndUpdate({ username: winnerUsername }, { $inc: { wins: 1 } });
 
+  // Reset game state
+  gameState.players = {};
+  gameState.monsters = {};
   // Mark game as over to prevent double updates
   gameState.gameOver = true;
 
