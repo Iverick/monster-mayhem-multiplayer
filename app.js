@@ -117,17 +117,17 @@ wss.on("connection", (ws, req) => {
       // console.log("gameState after after calling gameStart:", gameState);
     }
 
-    // Handle player movement
-    // Call broadcastAll to update gameState object with the new position and pass this object to all clients
+    // Handle monster movement
+    // Update the gameState object with the new position of the monster and broadcast the updated monster object to all clients
     if (messageData.type === "move") {
-      console.log("Player moved:", messageData);
-      gameState.players[messageData.id] = messageData.position;
+      console.log("123. Player moved:", messageData);
+      const { monsterId, position } = messageData;
+      gameState.monsters[monsterId].position = position;
 
       // Broadcast the new move to all clients
       broadcastAll({
         type: "update",
-        id: messageData.id,
-        position: messageData.position,
+        monsters: gameState.monsters,
       }, wss);
     }
 

@@ -35,70 +35,7 @@ function createHex(row, col) {
   hex.dataset.col = col;
   hex.textContent = ``;
 
-  // // Add click event to handle selection and movement
-  // hex.addEventListener("click", () => {
-  //   if (hex.classList.contains("highlight")) {
-  //     moveCharacter(row, col);
-  //     socket.send(JSON.stringify({
-  //       type: "move",
-  //       id: userId,
-  //       position: { row, col }
-  //     }));
-  //   } else {
-  //     highlightPath(row, col);
-  //   }
-  // });
-
   return hex;
-}
-
-// This function is used to move character of the player with the given id
-// from the starting point to desired destination
-function moveCharacter(row, col, id = userId) {
-  // Remove character class from the old position
-  const hexes = document.querySelectorAll(".hex");
-  hexes.forEach(hex => {
-    if (hex.classList.contains(`player-${id % 2 === 0 ? 'even' : 'odd'}`)) {
-      hex.classList.remove("character", "player-even", "player-odd");
-    }
-  });
-
-  // Find the hexagon at the new position and add character class to it
-  const hex = document.querySelector(`.hex[data-row="${row}"][data-col="${col}"]`);
-  if (hex) {
-    hex.classList.add("character", id % 2 === 0 ? "player-even" : "player-odd");
-  }
-
-  if (id === userId) {
-    clearPathHighlights();
-  }
-}
-
-function calculatePath(start, end) {
-  // Function calculates path from the starting point to the end
-  // Increments row and col values until we reach destination coordinates
-  const path = [];
-  let { row: currentRow, col: currentCol } = start;
-
-  while (currentRow !== end.row || currentCol !== end.col) {
-    if (currentRow != end.row) {
-      if (currentRow < end.row) currentRow++;
-      else if (currentRow > end.row) currentRow--;
-
-      path.push({ row: currentRow, col: currentCol });
-      continue;
-    }
-
-    if (currentCol !== end.col) {
-      if (currentCol < end.col) currentCol++;
-      else if (currentCol > end.col) currentCol--;
-
-      path.push({ row: currentRow, col: currentCol });
-      continue;
-    }
-  }
-
-  return path;
 }
 
 // This is the main function of the script
@@ -279,10 +216,6 @@ function handleMoveClick(event) {
   const row = parseInt(target.dataset.row, 10);
   const col = parseInt(target.dataset.col, 10);
 
-  // TODO: Remove this line after implementing update event
-  // gameState modiying logic should be done on the server side ONLY
-  monsters[selectedMonsterId].position = { row, col };
-
   // Check if the other player monster is already at the target position
   for (const [occupyingMonsterId, occupyingMonster] of Object.entries(monsters)) {
     // Emit collision event if the monster is at the target position and belongs to another player
@@ -293,19 +226,22 @@ function handleMoveClick(event) {
         type: "collision",
         attackerId: selectedMonsterId,
         defenderId: occupyingMonsterId,
-        position: { row, col}
+        position: { row, col },
       }));
     }
   }
+
+  // Emit move event to the server with the selected monster ID and new position
+  socket.send(JSON.stringify({
+    type: "move",
+    monsterId: selectedMonsterId,
+    position: { row, col },
+  }));
   
   // Deselect monster and clear highlights
   selectedMonsterId = null;
   clearPathHighlights();
   deselectMonster();
-
-  // TODO: FOR DEBUGGING REMOVE LATER
-  // EMIT MOVE EVENT TO THE SERVER INSTEAD OF THIS
-  drawMonsters();
 }
 
 // This function is used to update the UI based on the number of players
