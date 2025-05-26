@@ -279,20 +279,21 @@ function handleMoveClick(event) {
   const row = parseInt(target.dataset.row, 10);
   const col = parseInt(target.dataset.col, 10);
 
-  const monster = monsters[selectedMonsterId];
+  monsters[selectedMonsterId].position = { row, col };
 
   // Check if the other player monster is already at the target position
-  const destinationOccupied = Object.values(monsters).find((m) => 
-    m.position.row === row && m.position.col === col && m.playerId !== userId
-  );
-
-  if (destinationOccupied) {
-    console.log("Destination occupied by a monster of another player");
-  } else {
-    // FOR DEBUGGING REMOVE LATER
-    monsters[selectedMonsterId].position = { row, col };
+  for (const [occupyingMonsterId, occupyingMonster] of Object.entries(monsters)) {
+    // Emit collision event if the monster is at the target position and belongs to another player
+    if (occupyingMonster.position.row === row && 
+        occupyingMonster.position.col === col && 
+        Number(occupyingMonster.playerId) !== userId) {
+      socket.send(JSON.stringify({
+        type: "collision",
+        attackerId: selectedMonsterId,
+        defenderId: occupyingMonsterId
+      }));
+    }
   }
-
   
   // Deselect monster and clear highlights
   selectedMonsterId = null;
@@ -358,6 +359,7 @@ window.onload = () => {
     }
 
     // On update message we move the character to the new position and update the allPlayers object
+    // TODO: Modify this event
     if (message.type === "update") {
       console.log("Update message received", message);
       allPlayers[message.id] = message.position;

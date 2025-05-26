@@ -10,6 +10,7 @@ const { PORT, MONGO_URI, SESSION_SECRET_KEY } = require("./config/config");
 const authRoutes = require("./routes/authRoutes.js");
 const User = require("./models/User.js");
 const { getUsernameById, broadcastAll, broadcastExcept } = require("./helpers/serverHelpers.js");
+const { resolveCollision } = require("./helpers/gameHelpers.js");
 
 const app = express();
 
@@ -95,7 +96,7 @@ wss.on("connection", (ws, req) => {
   // Message WebSocket handler
   ws.on("message", async (message) => {
     console.log("Received:", message);
-    console.log("gameState object:", gameState);
+    console.log("99. gameState object:", gameState);
 
     const messageData = JSON.parse(message);
 
@@ -173,6 +174,27 @@ wss.on("connection", (ws, req) => {
         id: messageData.id,
         position: messageData.position,
       }, wss);
+    }
+
+    if (messageData.type === "collision") {
+      const { attackerId, defenderId } = messageData;
+      const attacker = gameState.monsters[attackerId];
+      const defender = gameState.monsters[defenderId];
+
+      if (!attacker || !defender) return;
+
+      const result = resolveCollision(attacker, attackerId, defender, defenderId);
+
+      // console.log("Collision result:", result);
+
+      result.removed.forEach((monsterId) => {
+        console.log(`Removing monster: ${monsterId}`);
+        delete gameState.monsters[monsterId];
+      });
+
+      // TODO: Emit update and pass the client updated gameState object
+      
+      console.log("193. gameState object after resolver collision:", gameState);
     }
   });
 
