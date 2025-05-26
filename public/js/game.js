@@ -290,7 +290,8 @@ function handleMoveClick(event) {
       socket.send(JSON.stringify({
         type: "collision",
         attackerId: selectedMonsterId,
-        defenderId: occupyingMonsterId
+        defenderId: occupyingMonsterId,
+        position: { row, col}
       }));
     }
   }
@@ -362,8 +363,8 @@ window.onload = () => {
     // On update message update the monsters object and redraw monsters on the board
     if (message.type === "update") {
       console.log("Update message received: ", message);
-      console.log("Updated monsters object: ", message.gameState.monsters);
-      monsters = message.gameState.monsters;
+      console.log("Updated monsters object: ", message.monsters);
+      monsters = message.monsters;
       drawMonsters();
     }
 

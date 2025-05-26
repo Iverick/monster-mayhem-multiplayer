@@ -133,7 +133,7 @@ wss.on("connection", (ws, req) => {
 
     // Handle monster collision
     if (messageData.type === "collision") {
-      const { attackerId, defenderId } = messageData;
+      const { attackerId, defenderId, position } = messageData;
       // Get the attacker and defender monster objects from gameState by passed IDs
       const attacker = gameState.monsters[attackerId];
       const defender = gameState.monsters[defenderId];
@@ -141,23 +141,27 @@ wss.on("connection", (ws, req) => {
       if (!attacker || !defender) return;
 
       // Get array of monster IDs to be removed
-      const result = resolveCollision(attacker, attackerId, defender, defenderId);
+      const { removed, winnerId } = resolveCollision(attacker, attackerId, defender, defenderId);
 
       // console.log("Collision result:", result);
 
       // Remove monsters from gameState based on the result
-      result.removed.forEach((monsterId) => {
-        console.log(`Removing monster: ${monsterId}`);
+      removed.forEach((monsterId) => {
+        // console.log(`Removing monster: ${monsterId}`);
         delete gameState.monsters[monsterId];
       });
 
-      // TODO: Emit update and pass the client updated gameState object
-      console.log("193. gameState object after resolver collision:", gameState);
+      // console.log("156. winnerId:", winnerId);
+      // If there is a winner of the monster collision, update its position as passed in the message
+      if (winnerId) {
+        // console.log("158. winnerId:", winnerId);
+        gameState.monsters[winnerId].position = position;
+      }
 
-      // Broadcast the new board state to all clients
+      // Broadcast the new monsters state to all clients
       broadcastAll({
         type: "update",
-        gameState,
+        monsters: gameState.monsters,
       }, wss);
     }
   });
