@@ -216,26 +216,12 @@ function handleMoveClick(event) {
   const row = parseInt(target.dataset.row, 10);
   const col = parseInt(target.dataset.col, 10);
 
-  // Check if the other player monster is already at the target position
-  for (const [occupyingMonsterId, occupyingMonster] of Object.entries(monsters)) {
-    // Emit collision event if the monster is at the target position and belongs to another player
-    if (occupyingMonster.position.row === row && 
-        occupyingMonster.position.col === col && 
-        Number(occupyingMonster.playerId) !== userId) {
-      socket.send(JSON.stringify({
-        type: "collision",
-        attackerId: selectedMonsterId,
-        defenderId: occupyingMonsterId,
-        position: { row, col },
-      }));
-    }
-  }
-
   // Emit move event to the server with the selected monster ID and new position
   socket.send(JSON.stringify({
     type: "move",
     monsterId: selectedMonsterId,
     position: { row, col },
+    userId,
   }));
   
   // Deselect monster and clear highlights

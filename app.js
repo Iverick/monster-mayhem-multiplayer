@@ -121,39 +121,52 @@ wss.on("connection", (ws, req) => {
     // Update the gameState object with the new position of the monster and broadcast the updated monster object to all clients
     if (messageData.type === "move") {
       console.log("123. Player moved:", messageData);
-      const { monsterId, position } = messageData;
-      gameState.monsters[monsterId].position = position;
+      const { monsterId, position, userId } = messageData;
+      const movingMonster = gameState.monsters[monsterId];
+      if (!movingMonster) return;
 
-      // Broadcast the new move to all clients
-      broadcastAll({
-        type: "update",
-        monsters: gameState.monsters,
-      }, wss);
-    }
+      // console.log("128. Monster to be moved:", movingMonster);
 
-    // Handle monster collision
-    if (messageData.type === "collision") {
-      const { attackerId, defenderId, position } = messageData;
-      // Get the attacker and defender monster objects from gameState by passed IDs
-      const attacker = gameState.monsters[attackerId];
-      const defender = gameState.monsters[defenderId];
-
-      if (!attacker || !defender) return;
-
-      // Get array of monster IDs to be removed
-      const { removed, winnerId } = resolveCollision(attacker, attackerId, defender, defenderId);
-
-      // Remove monsters from gameState based on the result
-      removed.forEach((monsterId) => {
-        delete gameState.monsters[monsterId];
-      });
-
-      // If there is a winner of the monster collision, update its position as passed in the message
-      if (winnerId) {
-        gameState.monsters[winnerId].position = position;
+      // Check if the monster belongs to the player
+      if (String(movingMonster.playerId) !== String(userId)) {
+        console.log(`Player ${userId} tried to move monster they don't own.`);
+        return;
       }
 
-      // Broadcast the new monsters state to all clients
+      // Check if there is a collision with another monster object that belongs to a different player
+      const destinationMonster = Object.entries(gameState.monsters).find(([id, monster]) => {
+        return id !== monsterId && 
+                monster.position.row === position.row && 
+                monster.position.col === position.col &&
+                String(monster.playerId) !== String(userId); // Ensure it's not the same player's monster
+      });
+
+      if (destinationMonster) {
+        const [defenderId, defender] = destinationMonster;
+
+        // Get array of monster IDs to be removed
+        const { removed, winnerId } = resolveCollision(movingMonster, monsterId, defender, defenderId);
+
+        // console.log("150. Collision resolved:", {
+        //   removed,
+        //   winnerId,
+        // });
+
+        // Remove monsters from gameState based on the result
+        removed.forEach((monsterId) => delete gameState.monsters[monsterId]);
+
+        // If there is a winner of the monster collision, update its position as passed in the message
+        if (winnerId) {
+          gameState.monsters[winnerId].position = position;
+        }
+      } else {
+        // No collision — apply move
+        movingMonster.position = position;
+      }
+
+      // console.log("160. Monster moved:", movingMonster);
+
+      // Broadcast the new move to all clients
       broadcastAll({
         type: "update",
         monsters: gameState.monsters,
