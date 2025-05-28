@@ -84,12 +84,6 @@ wss.on("connection", (ws, req) => {
 
   const playerId = nextPlayerId++;
 
-  // Notify other players of the new player with sync message
-  broadcastExcept(ws, {
-    type: "sync",
-    allPlayers: gameState.players,
-  }, wss);
-
   // Message WebSocket handler
   ws.on("message", async (message) => {
     console.log("Received:", message);
@@ -108,6 +102,14 @@ wss.on("connection", (ws, req) => {
         id: playerId,
         allPlayers: gameState.players,
       }));
+
+      // Inform all clients about the new player joining
+      broadcastAll({ 
+        type: "playerJoined",
+        data: {
+          allPlayers: gameState.players,
+        },
+      }, wss);
     }
 
     // Handle game start event with a helper function

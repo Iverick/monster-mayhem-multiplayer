@@ -273,18 +273,16 @@ window.onload = () => {
       drawMonsters();
     }
 
-    // On init message we setup the board and move player's character to its starting positions
+    // On init message we initialize client with its userId
     if (message.type === "init") {
       console.log("Init message received", message);
       userId = message.id;
-      allPlayers = message.allPlayers;
-      toggleControlsOverlay();
     }
 
-    // On sync message we update the allPlayers object and make sure all players drawn on the board
-    if (message.type === "sync") {
-      console.log("Sync received", message);
-      allPlayers = message.allPlayers;
+    // // On sync message we update the allPlayers object and make sure all players drawn on the board
+    if (message.type === "playerJoined") {
+      console.log("Player joined", message);
+      allPlayers = message.data.allPlayers;
       toggleControlsOverlay();
     }
 
