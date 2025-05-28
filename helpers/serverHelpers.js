@@ -1,9 +1,10 @@
 const WebSocket = require("ws");
 const User = require("../models/User.js");
+const { resolveCollision } = require("./gameHelpers.js");
 
-// TODO: Line 6 simplified for testing, remove later
-// const monsterTypes = ['vampire', 'werewolf', 'ghost'];
-const monsterTypes = ['vampire', 'werewolf'];
+const monsterTypes = ['vampire', 'werewolf', 'ghost'];
+// TODO: Use simplified line 7 simplified for testing
+// const monsterTypes = ['vampire', 'werewolf'];
 
 // Helper function that allows start the game by initializing monsters and modifying player data in the database
 async function startGame (gameState, wss) {
@@ -54,6 +55,91 @@ async function startGame (gameState, wss) {
   }, wss);
 }
 
+function handleMove(messageData, gameState, wss) {
+  console.log("123. Player moved:", messageData);
+  const { monsterId, position, userId } = messageData;
+  const movingMonster = gameState.monsters[monsterId];
+  if (!movingMonster) return;
+
+  console.log("64. serverHelpers. handleMove. Monster to be moved:", movingMonster);
+
+  // Check if the monster belongs to the player
+  if (String(movingMonster.playerId) !== String(userId)) {
+    console.log(`68. serverHelpers. handleMove. Player ${userId} tried to move monster they don't own.`);
+    return;
+  }
+
+  // Check if there is a collision with another monster object that belongs to a different player
+  const destinationMonster = Object.entries(gameState.monsters).find(([id, monster]) => {
+    return id !== monsterId && 
+            monster.position.row === position.row && 
+            monster.position.col === position.col &&
+            String(monster.playerId) !== String(userId); // Ensure it's not the same player's monster
+  });
+
+  if (destinationMonster) {
+    const [defenderId, defender] = destinationMonster;
+
+    // Get array of monster IDs to be removed
+    const { removed, winnerId } = resolveCollision(movingMonster, monsterId, defender, defenderId);
+
+    // Remove monsters from gameState based on the result
+    removed.forEach((monsterId) => delete gameState.monsters[monsterId]);
+
+    // If there is a winner of the monster collision, update its position as passed in the message
+    if (winnerId) {
+      gameState.monsters[winnerId].position = position;
+    }
+
+    // Check if the game is over after resolving the collision
+    checkGameOver(gameState, userId, wss);
+  } else {
+    // No collision — apply move
+    movingMonster.position = position;
+  }
+
+  // console.log("100. serverHelpers. Monster moved:", movingMonster);
+
+  // Broadcast the new move to all clients
+  broadcastAll({
+    type: "update",
+    monsters: gameState.monsters,
+  }, wss);
+}
+
+// Function sets the game winner, updates the database with the win/loss counts, resets the game state and emits a gameOver message
+async function processGameOver(gameState, activePlayers, movingUserId, wss) {
+  let winnerPlayerId;
+
+  if (activePlayers.length === 1) {
+    winnerPlayerId = activePlayers[0];
+  } else {
+    // If no players left, the current player is the winner
+    winnerPlayerId = movingUserId; 
+  }
+
+  const winnerUsername = gameState.players[winnerPlayerId];
+
+  const loserPlayerId = Object.keys(gameState.players).find(id => id !== String(winnerPlayerId));
+  const loserUsername = gameState.players[loserPlayerId];
+
+  // Modify the number of wins and losses for the players
+  await User.findOneAndUpdate({ username: winnerUsername }, { $inc: { wins: 1 } });
+  await User.findOneAndUpdate({ username: loserUsername }, { $inc: { losses: 1 } });
+
+  // Reset game state
+  gameState.gameOver = true;
+  gameState.players = {};
+  gameState.monsters = {};
+
+  // Broadcast game over message to all clients passing the winner and loser usernames
+  broadcastAll({
+    type: "gameOver",
+    winner: winnerUsername,
+    loser: loserUsername,
+  }, wss);
+}
+
 // Helper function to handle player disconnection
 async function handleDisconnection (gameState, playerId, ws, wss) {
   const leftPlayerUsername = gameState.players[playerId];
@@ -92,6 +178,35 @@ async function handleDisconnection (gameState, playerId, ws, wss) {
   }, wss);
 }
 
+// Function to check if there is a game over condition after a move
+function checkGameOver(gameState, movingUserId, wss) {
+  // After collision resolution, check if a player has lost all monsters
+  const playerMonsterCounts = {};
+
+  // Count remaining monsters for each player
+  for (const monster of Object.values(gameState.monsters)) {
+    if (!playerMonsterCounts[monster.playerId]) {
+      playerMonsterCounts[monster.playerId] = 0;
+    }
+    playerMonsterCounts[monster.playerId]++;
+  }
+
+  // Get all player IDs in the game
+  const remainingPlayers = Object.keys(gameState.players);
+
+  // Find which players still have monsters
+  const activePlayers = remainingPlayers.filter(
+    playerId => playerMonsterCounts[playerId] > 0
+  );
+
+  console.log("202. checkGameOver. Active players with monsters:", activePlayers);
+
+  // If one or no players remain with monsters, declare the game over and set a winner of the game
+  if (activePlayers.length < 2 && !gameState.gameOver) {
+    processGameOver(gameState, activePlayers, movingUserId, wss)
+  }
+}
+
 // Function allows to get the username by playerId
 function getUsernameById(id, playerIdToUsername) {
   return playerIdToUsername[id];
@@ -121,6 +236,7 @@ function broadcastExcept(exceptClient, message, wss) {
 
 module.exports = {
   startGame,
+  handleMove,
   handleDisconnection,
   getUsernameById,
   broadcastAll,

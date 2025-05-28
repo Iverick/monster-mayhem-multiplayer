@@ -1,5 +1,3 @@
-
-
 // This helper function resolves a collision between two monsters in a game.
 // It for the monster types collided and determines what monsters should be removed.
 function resolveCollision (attacker, attackerId, defender, defenderId) {
