@@ -111,7 +111,9 @@ function clearMonsters() {
 }
 
 function selectMonster(monsterId, hex) {
-  // If the monster is already selected, deselect it and return  
+  // If the monster is already selected, deselect it and return
+  console.log("Monster selected:", monsterId);
+
   if (selectedMonsterId === monsterId) {
     deselectMonster();
     return;
@@ -258,6 +260,8 @@ window.onload = () => {
     // console.log("line 178: ", allPlayers.length);
     const message = JSON.parse(event.data);
 
+    console.log("263. Username check:", username);
+
     if (message.type === "start") {
       // console.log("197: Start message data object", message.data);
       monsters = message.data.monsters;
@@ -297,6 +301,21 @@ window.onload = () => {
     if (message.type === "remove") {
       alert(`Game over! ${message.winner} won. ${message.loser} left the game.`);
       window.location.href = "/me"; // Redirect to the profile page
+    }
+
+    // On gameOver message we alert the user about the game result and redirect to the profile page
+    if (message.type === "gameOver") {
+      const { winner, loser } = message;
+
+      // Alert the user about the game result
+      if (username === winner) {
+        alert(`🎉 Congratulations! You won the game against ${loser}.`);
+      } else {
+        alert(`😢 Game over!  You lost against ${winner}.`);
+      }
+
+      // Redirect to the profile page after the game is over
+      window.location.href = "/me";
     }
   };
 };

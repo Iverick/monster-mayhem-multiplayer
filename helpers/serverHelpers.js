@@ -1,7 +1,9 @@
 const WebSocket = require("ws");
 const User = require("../models/User.js");
 
-const monsterTypes = ['vampire', 'werewolf', 'ghost'];
+// TODO: Line 6 simplified for testing, remove later
+// const monsterTypes = ['vampire', 'werewolf', 'ghost'];
+const monsterTypes = ['vampire', 'werewolf'];
 
 // Helper function that allows start the game by initializing monsters and modifying player data in the database
 async function startGame (gameState, wss) {

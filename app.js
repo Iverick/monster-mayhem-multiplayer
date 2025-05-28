@@ -159,6 +159,64 @@ wss.on("connection", (ws, req) => {
         if (winnerId) {
           gameState.monsters[winnerId].position = position;
         }
+
+        // TODO: Refactor this to move the whole logic to a separate function
+        // After collision resolution, check if a player has lost all monsters
+        const playerMonsterCounts = {};
+
+        // Count remaining monsters for each player
+        for (const monster of Object.values(gameState.monsters)) {
+          if (!playerMonsterCounts[monster.playerId]) {
+            playerMonsterCounts[monster.playerId] = 0;
+          }
+          playerMonsterCounts[monster.playerId]++;
+        }
+
+        // Get all player IDs in the game
+        const remainingPlayers = Object.keys(gameState.players);
+
+        // Find which players still have monsters
+        const activePlayers = remainingPlayers.filter(
+          playerId => playerMonsterCounts[playerId] > 0
+        );
+
+        console.log("183. Active players with monsters:", activePlayers);
+
+        // If one or no players remain with monsters, declare the game over and set a winner of the game
+        if (activePlayers.length < 2 && !gameState.gameOver) {
+
+          let winnerPlayerId;
+
+          if (activePlayers.length === 1) {
+            winnerPlayerId = activePlayers[0];
+          } else {
+            // If no players left, the current player is the winner
+            winnerPlayerId = userId; 
+          }
+
+          const winnerUsername = gameState.players[winnerPlayerId];
+
+          const loserPlayerId = Object.keys(gameState.players).find(id => id !== String(winnerPlayerId));
+          const loserUsername = gameState.players[loserPlayerId];
+
+          // Modify the number of wins and losses for the players
+          await User.findOneAndUpdate({ username: winnerUsername }, { $inc: { wins: 1 } });
+          await User.findOneAndUpdate({ username: loserUsername }, { $inc: { losses: 1 } });
+
+          // Reset game state
+          gameState.gameOver = true;
+          gameState.players = {};
+          gameState.monsters = {};
+
+          // Broadcast game over message to all clients passing the winner and loser usernames
+          broadcastAll({
+            type: "gameOver",
+            winner: winnerUsername,
+            loser: loserUsername,
+          }, wss);
+        }
+
+        // TODO: END of refactoring
       } else {
         // No collision — apply move
         movingMonster.position = position;
