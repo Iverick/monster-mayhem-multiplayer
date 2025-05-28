@@ -28,6 +28,13 @@ function resolveCollision (attacker, attackerId, defender, defenderId) {
   return { removed: [removedId], winnerId };
 }
 
+// This resets the game state by clearing all players and monsters
+function clearGameState(gameState) {
+  gameState.players = {};
+  gameState.monsters = {};
+}
+
 module.exports = {
+  clearGameState,
   resolveCollision,
 };

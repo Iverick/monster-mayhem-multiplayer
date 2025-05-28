@@ -7,6 +7,7 @@ const userSchema = new mongoose.Schema({
   games: { type: Number, default: 0 },
   wins: { type: Number, default: 0 },
   losses: { type: Number, default: 0 },
+  gameId: { type: mongoose.Schema.Types.ObjectId, ref: "Game", default: null },
 });
 
 userSchema.plugin(passportLocalMongoose);

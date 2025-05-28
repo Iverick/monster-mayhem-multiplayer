@@ -1,10 +1,11 @@
 const WebSocket = require("ws");
+const Game = require("../models/Game.js");
 const User = require("../models/User.js");
-const { resolveCollision } = require("./gameHelpers.js");
+const { resolveCollision, clearGameState } = require("./gameHelpers.js");
 
-const monsterTypes = ['vampire', 'werewolf', 'ghost'];
+// const monsterTypes = ['vampire', 'werewolf', 'ghost'];
 // TODO: Use simplified line 7 simplified for testing
-// const monsterTypes = ['vampire', 'werewolf'];
+const monsterTypes = ['vampire', 'werewolf'];
 
 // Helper function that allows start the game by initializing monsters and modifying player data in the database
 async function startGame (gameState, wss) {
@@ -129,8 +130,7 @@ async function processGameOver(gameState, activePlayers, movingUserId, wss) {
 
   // Reset game state
   gameState.gameOver = true;
-  gameState.players = {};
-  gameState.monsters = {};
+  clearGameState(gameState);
 
   // Broadcast game over message to all clients passing the winner and loser usernames
   broadcastAll({
@@ -141,40 +141,36 @@ async function processGameOver(gameState, activePlayers, movingUserId, wss) {
 }
 
 // Helper function to handle player disconnection
-async function handleDisconnection (gameState, playerId, ws, wss) {
-  const leftPlayerUsername = gameState.players[playerId];
-
-  console.log(`Player ${playerId} (${leftPlayerUsername}) disconnected`);
-
-  // Remove the left player from the gameState and remove its monsters
-  delete gameState.players[playerId];
-  for (const monsterId in gameState.monsters) {
-    if (gameState.monsters[monsterId].playerId === playerId) {
-      delete gameState.monsters[monsterId];
-    }
-  }
-
-  // Escape the modifying game counts if the game is already over
+// It stores the game state in the database and notifies the remaining player
+async function handleDisconnection (gameState, leftPlayerId = playerId, ws, wss) {
+  // This guard prevents the game from being processed and stored twice in the database
   if (gameState.gameOver) return;
-    
-  const remainingPlayerId = Object.keys(gameState.players)[0];
-  const winnerUsername = gameState.players[remainingPlayerId];
-
-  // Modify the number of wins and losses for the players
-  await User.findOneAndUpdate({ username: leftPlayerUsername }, { $inc: { losses: 1 } });
-  await User.findOneAndUpdate({ username: winnerUsername }, { $inc: { wins: 1 } });
-
-  // Reset game state
-  gameState.players = {};
-  gameState.monsters = {};
-  // Mark game as over to prevent double updates
   gameState.gameOver = true;
+
+  const leftPlayerUsername = gameState.players[leftPlayerId];
+
+  console.log(`Player ${leftPlayerId} (${leftPlayerUsername}) disconnected`);
+
+  // Create a new game entry in the database to store the current game state
+  const gameEntry = await Game.create({
+    players: gameState.players,
+    monsters: gameState.monsters,
+    status: "paused",
+  })
+
+  const remainingPlayerId = Object.keys(gameState.players).find(id => id !== String(leftPlayerId));
+  const remainingPlayerUsername = gameState.players[remainingPlayerId];
+
+  // Link the game entry to the players in the database
+  await User.findOneAndUpdate({ username: leftPlayerUsername }, { gameId: gameEntry._id });
+  await User.findOneAndUpdate({ username: remainingPlayerUsername }, { gameId: gameEntry._id });
+
+  clearGameState(gameState);
 
   // Notify other player that the game is over
   broadcastExcept(ws, {
-    type: "remove",
-    winner: winnerUsername,
-    loser: leftPlayerUsername,
+    type: "gamePaused",
+    leftPlayerUsername,
   }, wss);
 }
 
