@@ -115,6 +115,7 @@ function selectMonster(monsterId, hex) {
   console.log("Monster selected:", monsterId);
 
   if (selectedMonsterId === monsterId) {
+    console.log("Deselecting the monster already being selected:", monsterId);
     deselectMonster();
     return;
   }
@@ -210,9 +211,11 @@ function clearPathHighlights() {
 }
 
 function handleMoveClick(event) {
-  console.log("Move clicked");
+  console.log("214. Move clicked");
   const target = event.currentTarget;
   if (!target.classList.contains("highlight-path") || !selectedMonsterId) return;
+  
+  console.log("218. Move clicked");
 
   // Get the row and column of the clicked hexagon
   const row = parseInt(target.dataset.row, 10);
@@ -261,6 +264,8 @@ window.onload = () => {
     const message = JSON.parse(event.data);
 
     console.log("263. Username check:", username);
+    console.log("264. userId check:", userId);
+    console.log("265. allPlayers check:", allPlayers);
 
     if (message.type === "start") {
       // console.log("197: Start message data object", message.data);
@@ -289,7 +294,7 @@ window.onload = () => {
     // On update message update the monsters object and redraw monsters on the board
     if (message.type === "update") {
       console.log("Update message received: ", message);
-      console.log("Updated monsters object: ", message.monsters);
+      console.log("Updated monsters received: ", message.monsters);
       monsters = message.monsters;
       drawMonsters();
     }
