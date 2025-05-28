@@ -7,6 +7,7 @@ let allPlayers = {};
 // This variable is used to store all monsters and their positions received from the server
 let monsters = {};
 let selectedMonsterId = null;
+let justMoved = false;
 
 // Get access to the root div#board element on index.html page
 // Which will be later populated with rows of hexagons
@@ -113,6 +114,11 @@ function clearMonsters() {
 function selectMonster(monsterId, hex) {
   // If the monster is already selected, deselect it and return
   console.log("Monster selected:", monsterId);
+
+  if (justMoved) {
+    justMoved = false;
+    return;
+  }
 
   if (selectedMonsterId === monsterId) {
     console.log("Deselecting the monster already being selected:", monsterId);
@@ -232,6 +238,7 @@ function handleMoveClick(event) {
   }));
   
   // Deselect monster and clear highlights
+  justMoved = true;
   selectedMonsterId = null;
   clearPathHighlights();
   deselectMonster();
