@@ -1,11 +1,13 @@
 let userId = null;
 // This variable is used to store all players and their positions
-// Example of the object structure:
-// allPlayers = { userId: { row, col } }
-// allPlayers = { 51325: { 0, 0 }, 51326: { 9, 9 } }
+// allPlayers = { 
+//  "playerId1": "username1",
+//  "playerId2": "username2"
+// }
 let allPlayers = {};
 // This variable is used to store all monsters and their positions received from the server
 let monsters = {};
+let stats = {};
 let selectedMonsterId = null;
 let justMoved = false;
 
@@ -293,7 +295,9 @@ window.onload = () => {
     if (message.type === "start") {
       // console.log("197: Start message data object", message.data);
       monsters = message.data.monsters;
-      // console.log("199: Monsters object now", monsters);
+      stats = message.data.stats;
+      // console.log("299: Monsters object now", monsters);
+      // console.log("300: User stats", stats);
       //Remove overlay here so it no longer displayed for all players
       document.getElementById('game-controls').style.display = 'none';
       // Setup the board with hexagons and add the character for every player to the starting position

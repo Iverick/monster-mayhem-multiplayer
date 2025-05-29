@@ -12,6 +12,8 @@ async function startGame (gameState, wss) {
   // Reset game over state
   gameState.gameOver = false;
 
+  const userStats = {};
+
   // The following code is used to generate the monsters and their location for each player
   // and store them in the gameState object
   for (const playerId in gameState.players) {
@@ -37,23 +39,30 @@ async function startGame (gameState, wss) {
     })
   }
 
-  // Increment the game count for each player
+  // Find the user by username, update their game stats, and store them in the userStats object
   for (const playerId in gameState.players) {
-    console.log("startGame method: Check username for id: ", gameState.players[playerId]);
+    console.log("44. serverHelper. startGame method: Check username for id: ", gameState.players[playerId]);
+
     const username = gameState.players[playerId];
     if (username) {
-      await User.findOneAndUpdate(
-        { username },
-        { $inc: { games: 1 }},
-      )
+      const user = await User.findOne({ username });
+      user.games += 1;
+      await user.save();
+
+      userStats[username] = {
+        wins: user.wins,
+        losses: user.losses,
+        games: user.games,
+      }
     }
   }
-      
+
   // Send start message to all players with the gameState object
   broadcastAll({ 
     type: "start",
     data: {
       players: gameState.players,
+      stats: userStats,
       monsters: gameState.monsters
     },
   }, wss);
