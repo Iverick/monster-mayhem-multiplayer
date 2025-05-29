@@ -11,14 +11,22 @@ const monsterTypes = ['vampire', 'werewolf'];
 async function startGame (gameState, wss) {
   // Reset game over state
   gameState.gameOver = false;
-  // Use fixed cols for simplicity
-  const spawnRows = [2, 5, 7]; 
 
   // The following code is used to generate the monsters and their location for each player
   // and store them in the gameState object
   for (const playerId in gameState.players) {
+    // Set the monster spawn column
     const isEven = parseInt(playerId) % 2 === 0;
     const col = isEven ? 0 : 9;
+
+    // Generate a random set of rows for the monsters with unique values
+    const rowsSet = new Set();
+    const maxRow = 9;
+    while (rowsSet.size < monsterTypes.length) {
+      const randomRow = Math.floor(Math.random() * (maxRow + 1));
+      rowsSet.add(randomRow);
+    }
+    const spawnRows = Array.from(rowsSet);
 
     monsterTypes.forEach((type, index) => {
       const monsterId = `m_${playerId}-${type}`;
