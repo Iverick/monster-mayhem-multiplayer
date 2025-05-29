@@ -17,6 +17,7 @@ const board = document.getElementById("board");
 
 const startButton = document.getElementById('start-button');
 const waitingMessage = document.getElementById('waiting-message');
+const playerStatsContainer = document.getElementById('player-stats');
 
 const monsterIcons = {
   vampire: "🧛",
@@ -65,6 +66,25 @@ function setupBoard() {
     // Append each row to the root element
     board.appendChild(rowElement);
   }
+}
+
+// This function is used to display player stats in the child components of the declared player-stats placeholder
+function displayPlayerStats() {
+  console.log("Player stats: ", stats);
+
+  for (const id in stats) {
+    const playerStats = stats[id];
+    const position = id % 2 === 0 ? "even" : "odd";
+
+    // Populate the player stats container elements with the player stats
+    document.getElementById(`player-${position}-username`).textContent = playerStats.username;
+    document.getElementById(`player-${position}-games`).textContent = playerStats.games;
+    document.getElementById(`player-${position}-wins`).textContent = playerStats.wins;
+    document.getElementById(`player-${position}-losses`).textContent = playerStats.losses;
+  }
+
+  // Call this function to make player-stats placeholder visible
+  toggleStatsVisibility();
 }
 
 // This function is used to draw monsters on the board
@@ -275,6 +295,11 @@ function toggleControlsOverlay() {
   }
 }
 
+// This function is used to toggle the visibility of player stats block
+function toggleStatsVisibility() {
+  const playerCount = Object.keys(allPlayers).length;
+  (playerCount >= 2) ? playerStatsContainer.style.display = 'flex' : playerStatsContainer.style.display = 'none';
+}
 
 // startButton click handler that sends a message to the server to start the game
 startButton.addEventListener("click", () => {
@@ -296,13 +321,13 @@ window.onload = () => {
       // console.log("197: Start message data object", message.data);
       monsters = message.data.monsters;
       stats = message.data.stats;
-      // console.log("299: Monsters object now", monsters);
-      // console.log("300: User stats", stats);
+
       //Remove overlay here so it no longer displayed for all players
       document.getElementById('game-controls').style.display = 'none';
       // Setup the board with hexagons and add the character for every player to the starting position
       setupBoard();
       drawMonsters();
+      displayPlayerStats();
     }
 
     // On init message we initialize client with its userId

@@ -49,7 +49,8 @@ async function startGame (gameState, wss) {
       user.games += 1;
       await user.save();
 
-      userStats[username] = {
+      userStats[playerId] = {
+        username,
         wins: user.wins,
         losses: user.losses,
         games: user.games,

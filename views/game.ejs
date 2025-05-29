@@ -19,11 +19,20 @@
       <button id="start-button" disabled>Start Game</button>
     </div>
 
-    <div class="player-stats">
-      <h3><%= user.username %></h3>
-      <p>Games Played: <%= user.games %></p>
-      <p>Wins: <%= user.wins %></p>
-      <p>Losses: <%= user.losses %></p>
+    <div id="player-stats" class="player-stats">
+      <div id="player-even-stats" class="player-stats even">
+        <h3 id="player-even-username"></h3>
+        <p>Games Played: <span id="player-even-games"></span></p>
+        <p>Wins: <span id="player-even-wins"></span></p>
+        <p>Losses: <span id="player-even-losses"></span></p>
+      </div>
+
+      <div id="player-odd-stats" class="player-stats odd">
+        <h3 id="player-odd-username"></h3>
+        <p>Games Played: <span id="player-odd-games"></span></p>
+        <p>Wins: <span id="player-odd-wins"></span></p>
+        <p>Losses: <span id="player-odd-losses"></span></p>
+      </div>
     </div>
 
     <div class="board" id="board"></div>

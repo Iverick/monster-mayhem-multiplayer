@@ -91,16 +91,43 @@ body {
   opacity: 1;
 }
 
-/* Styling board */
+/* Styling player-stats placeholder */
 .player-stats {
   position: absolute;
   top: 70px;
-  left: 20px;
+  left: 0;
   background-color: #f4f4f4;
   padding: 10px 20px;
   border-radius: 5px;
+  width: 100%;
+  display: none; /* Initially hidden */
+  justify-content: space-between;
 }
 
+.player-stats .odd,
+.player-stats .even {
+  position: relative;
+  display: flex;
+  flex-direction: column; /* Stack children vertically */
+  align-items: flex-start; /* Align items to the left */
+  background-color: #f4f4f4;
+  padding: 10px 20px;
+  border-radius: 5px;
+  width: 180px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+/* Left side */
+.player-stats .even {
+  margin-left: 20px;
+}
+
+/* Right side */
+.player-stats .odd {
+  margin-right: 20px;
+}
+
+/* Styling board */
 .board {
   margin-top: 60px;
   gap: 5px;
