@@ -7,6 +7,7 @@ let allPlayers = {};
 // This variable is used to store all monsters and their positions received from the server
 let monsters = {};
 let selectedMonsterId = null;
+let justMoved = false;
 
 // Get access to the root div#board element on index.html page
 // Which will be later populated with rows of hexagons
@@ -89,7 +90,14 @@ function drawMonsters() {
     }
 
     if (parseInt(ownerId) === parseInt(userId)) {
-      hex.addEventListener("click", () => selectMonster(id, hex));
+      // First remove the old listener if it exists
+        hex.removeEventListener("click", hex._clickHandler);
+
+        // Create and store a new named click handler
+        const handler = () => selectMonster(id, hex);
+        hex._clickHandler = handler;
+
+        hex.addEventListener("click", handler);
     }
   }
 }
@@ -112,18 +120,27 @@ function clearMonsters() {
 
 function selectMonster(monsterId, hex) {
   // If the monster is already selected, deselect it and return
-  console.log("Monster selected:", monsterId);
-
-  if (selectedMonsterId === monsterId) {
-    deselectMonster();
+  // console.log("123. justMoved check: ", justMoved);
+  if (justMoved) {
     return;
   }
 
+  // console.log("128. Monster selected:", monsterId);
+  // console.log("129. ID of previously selected monster:", selectedMonsterId);
+  // console.log("130. Selecting the same monster: ", selectedMonsterId === monsterId);
+
+  if (selectedMonsterId === monsterId) {
+    deselectMonster();
+    clearPathHighlights();
+    return;
+  }
+  
   deselectMonster();
   clearPathHighlights();
 
   selectedMonsterId = monsterId;
-  // console.log("Monster selected", selectedMonsterId);
+  // console.log("141. Monsters object: ", monsters);
+  // console.log("142. selectedMonsterId: ", selectedMonsterId);
   const { position } = monsters[monsterId];
   hex.classList.add("monster-selected");
 
@@ -142,8 +159,9 @@ function deselectMonster() {
     if (hex) {
       hex.classList.remove("monster-selected");
     }
-    selectedMonsterId = null;
   }
+
+  selectedMonsterId = null;
 }
 
 // This function is used to highlight the valid path for the selected monster
@@ -206,13 +224,16 @@ function isBlockedByEnemy (startRow, startCol, endRow, endCol) {
 function clearPathHighlights() {
   document.querySelectorAll(".highlight-path").forEach((hex) => {
     hex.classList.remove("highlight-path");
+    hex.removeEventListener("click", handleMoveClick);
   });
 }
 
 function handleMoveClick(event) {
-  console.log("Move clicked");
+  // console.log("214. Move clicked");
   const target = event.currentTarget;
   if (!target.classList.contains("highlight-path") || !selectedMonsterId) return;
+  
+  // console.log("218. Move clicked");
 
   // Get the row and column of the clicked hexagon
   const row = parseInt(target.dataset.row, 10);
@@ -230,6 +251,11 @@ function handleMoveClick(event) {
   selectedMonsterId = null;
   clearPathHighlights();
   deselectMonster();
+
+  justMoved = true;
+  setTimeout(() => {
+    justMoved = false;
+  }, 0);
 }
 
 // This function is used to update the UI based on the number of players
@@ -261,6 +287,8 @@ window.onload = () => {
     const message = JSON.parse(event.data);
 
     console.log("263. Username check:", username);
+    console.log("264. userId check:", userId);
+    console.log("265. allPlayers check:", allPlayers);
 
     if (message.type === "start") {
       // console.log("197: Start message data object", message.data);
@@ -289,7 +317,7 @@ window.onload = () => {
     // On update message update the monsters object and redraw monsters on the board
     if (message.type === "update") {
       console.log("Update message received: ", message);
-      console.log("Updated monsters object: ", message.monsters);
+      console.log("Updated monsters received: ", message.monsters);
       monsters = message.monsters;
       drawMonsters();
     }
