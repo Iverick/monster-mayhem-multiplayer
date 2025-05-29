@@ -34,7 +34,20 @@ function clearGameState(gameState) {
   gameState.monsters = {};
 }
 
+// This function generates a array of unique random rows values between 0 and 9
+function getUniqueRandomRows(count, maxRow) {
+  const rowsSet = new Set();
+  
+  while (rowsSet.size < count) {
+    const randomRow = Math.floor(Math.random() * (maxRow + 1));
+    rowsSet.add(randomRow);
+  }
+
+  return Array.from(rowsSet);
+}
+
 module.exports = {
   clearGameState,
+  getUniqueRandomRows,
   resolveCollision,
 };

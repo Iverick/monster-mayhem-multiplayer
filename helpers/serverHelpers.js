@@ -1,7 +1,7 @@
 const WebSocket = require("ws");
 const Game = require("../models/Game.js");
 const User = require("../models/User.js");
-const { resolveCollision, clearGameState } = require("./gameHelpers.js");
+const { resolveCollision, clearGameState, getUniqueRandomRows } = require("./gameHelpers.js");
 
 // const monsterTypes = ['vampire', 'werewolf', 'ghost'];
 // TODO: Use simplified line 7 simplified for testing
@@ -19,14 +19,9 @@ async function startGame (gameState, wss) {
     const isEven = parseInt(playerId) % 2 === 0;
     const col = isEven ? 0 : 9;
 
-    // Generate a random set of rows for the monsters with unique values
-    const rowsSet = new Set();
+    // Set the monster spawn rows
     const maxRow = 9;
-    while (rowsSet.size < monsterTypes.length) {
-      const randomRow = Math.floor(Math.random() * (maxRow + 1));
-      rowsSet.add(randomRow);
-    }
-    const spawnRows = Array.from(rowsSet);
+    const spawnRows = getUniqueRandomRows(monsterTypes.length, maxRow);
 
     monsterTypes.forEach((type, index) => {
       const monsterId = `m_${playerId}-${type}`;
