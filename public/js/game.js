@@ -5,6 +5,7 @@ let userId = null;
 //  "playerId2": "username2"
 // }
 let allPlayers = {};
+let playersTurnCompleted = {};
 // This variable is used to store all monsters and their positions received from the server
 let monsters = {};
 let stats = {};
@@ -305,6 +306,8 @@ window.onload = () => {
       // console.log("197: Start message data object", message.data);
       monsters = message.data.monsters;
       stats = message.data.stats;
+      playersTurnCompleted = message.data.playersTurnCompleted;
+      console.log("310. onStart playersTurnCompleted: ", playersTurnCompleted);
 
       //Remove overlay here so it no longer displayed for all players
       document.getElementById('game-controls').style.display = 'none';
@@ -317,9 +320,10 @@ window.onload = () => {
 
     // On update message update the monsters object and redraw monsters on the board
     if (message.type === "update") {
-      console.log("Update message received: ", message);
       console.log("Updated monsters received: ", message.monsters);
       monsters = message.monsters;
+      playersTurnCompleted = message.playersTurnCompleted;
+      console.log(`326. Updated playersTurnCompleted: ${playersTurnCompleted[userId]} for local player with userID ${userId}`);
       drawMonsters();
     }
 

@@ -69,6 +69,7 @@ async function startGame (gameState, wss) {
       players: gameState.players,
       stats: userStats,
       monsters: gameState.monsters,
+      playersTurnCompleted: gameState.playersTurnCompleted,
     },
   }, wss);
 }
@@ -111,19 +112,30 @@ function handleMove(messageData, gameState, wss) {
 
     // Check if the game is over after resolving the collision
     checkGameOver(gameState, userId, wss);
-  } else {
-    // No collision — apply move
-    movingMonster.position = position;
-    movingMonster.hasMoved = true;
   }
 
-  // console.log("121. serverHelpers. Monster moved:", movingMonster);
-  // console.log("121. serverHelpers. Monsters after monster moved:", gameState.monsters);
+  // No collision — apply move
+  movingMonster.position = position;
+  movingMonster.hasMoved = true;
 
+  // Check if the player has moved all their monsters
+  const playerMonsters = Object.values(gameState.monsters).filter((monster) => String(monster.playerId) === String(userId));
+  const allPlayerMonstersMoved = playerMonsters.every((monster) => monster.hasMoved);
+  // If all monsters have moved, set the player's turn as completed
+  if (allPlayerMonstersMoved) {
+    gameState.playersTurnCompleted[userId] = true;
+  }
+
+  // console.log("129. serverHelpers. Monster moved:", movingMonster);
+  // console.log("130. serverHelpers. Monsters after monster moved:", gameState.monsters);
+  // console.log("131. serverHelpers. handleMove. Player monsters:", playerMonsters);
+  // console.log("132. serverHelpers. handleMove. Player turn completed:", gameState.playersTurnCompleted);
+  
   // Broadcast the new move to all clients
   broadcastAll({
     type: "update",
     monsters: gameState.monsters,
+    playersTurnCompleted: gameState.playersTurnCompleted,
   }, wss);
 }
 
