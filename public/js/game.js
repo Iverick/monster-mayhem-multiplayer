@@ -18,6 +18,7 @@ const board = document.getElementById("board");
 const startButton = document.getElementById('start-button');
 const waitingMessage = document.getElementById('waiting-message');
 const playerStatsContainer = document.getElementById('player-stats');
+const gameHintsContainer = document.getElementById('game-hints');
 
 const monsterIcons = {
   vampire: "🧛",
@@ -85,6 +86,20 @@ function displayPlayerStats() {
 
   // Call this function to make player-stats placeholder visible
   toggleStatsVisibility();
+}
+
+function displayGameHints() {
+  const playerColor = userId % 2 === 0 ? "red" : "blue";
+  const playerColorIndicator = document.getElementById("player-color-indicator");
+  playerColorIndicator.textContent = `${playerColor}`;
+  playerColorIndicator.style.color = `${playerColor}`;
+
+  toggleHintsVisibility();
+}
+
+function toggleHintsVisibility() {
+  const playerCount = Object.keys(allPlayers).length;
+  (playerCount >= 2) ? gameHintsContainer.style.display = 'block' : gameHintsContainer.style.display = 'none';
 }
 
 // This function is used to draw monsters on the board
@@ -328,6 +343,7 @@ window.onload = () => {
       setupBoard();
       drawMonsters();
       displayPlayerStats();
+      displayGameHints();
     }
 
     // On init message we initialize client with its userId

@@ -9,16 +9,21 @@
   <body>
     <nav class="navbar">
       <a class="logo">Monster Mayhem</a>
-      <form action="/logout" method="POST" class="logout-form">
-        <button class="logout-button" type="submit">Logout</button>
-      </form>
+      <div class="user-info-container">
+        <span class="username"><%= user.username %></span>
+        <form action="/logout" method="POST" class="logout-form">
+          <button class="logout-button" type="submit">Logout</button>
+        </form>
+      </div>
     </nav>
 
+    <!-- full screen board overlay -->
     <div id="game-controls" class="overlay">
       <p id="waiting-message">Waiting for another player to join...</p>
       <button id="start-button" disabled>Start Game</button>
     </div>
 
+    <!-- player stats section -->
     <div id="player-stats" class="player-stats">
       <div id="player-even-stats" class="player-stats even">
         <h3 id="player-even-username"></h3>
@@ -35,7 +40,20 @@
       </div>
     </div>
 
-    <div class="board" id="board"></div>
+    <div class="game-container">
+      <!-- board placeholder -->
+      <div class="board" id="board"></div>
+
+      <!-- game hints section -->
+      <div id="game-hints" class="game-hints">
+        <h4>Game Hints</h4>
+        <ul>
+          <li>You can move <strong>your monsters</strong> (highlighted in <span id="player-color-indicator"></span>).</li>
+          <li>Click a monster to see its possible moves.</li>
+        </ul>
+      </div>
+    </div>
+
     <script src="/js/game.js"></script>
     <script>
       // Inject username variable into the game script

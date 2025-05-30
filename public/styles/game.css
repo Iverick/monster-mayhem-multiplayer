@@ -19,7 +19,6 @@
   z-index: 1000;
 }
 
-/* Style the logo */
 .navbar .logo {
   color: white;
   text-decoration: none;
@@ -27,12 +26,21 @@
   font-weight: bold;
 }
 
-/* Style the logout form */
+.user-info-container {
+  display: flex;
+  align-items: center;
+}
+
+.username {
+  color: white;
+  margin-right: 20px;
+  font-size: 15px;
+}
+
 .logout-form {
   margin: 0;
 }
 
-/* Style the logout button */
 .logout-button {
   background-color: #e85c29;
   border: none;
@@ -211,4 +219,21 @@ body {
 
 .player-odd {
   background-color: blue;
+}
+
+/* Styling game hints section */
+.game-hints {
+  margin-top: 20px;
+  padding: 10px 25px;
+  background-color: #eef;
+  border: 1px solid #ccd;
+  border-radius: 8px;
+  max-width: 600px;
+  font-size: 14px;
+  display: none; /* Initially hidden */
+}
+
+.game-hints h4 {
+  margin-bottom: 8px;
+  font-size: 16px;
 }
