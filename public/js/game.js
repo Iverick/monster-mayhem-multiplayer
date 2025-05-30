@@ -157,7 +157,15 @@ function selectMonster(monsterId, hex) {
     return;
   }
 
-  // console.log("128. Monster selected:", monsterId);
+  const selectedMonster = monsters[monsterId];
+
+  // Prevent selecting a monster that has already moved
+  if (selectedMonster.hasMoved) {
+    alert("You can move monster only once per turn!");
+    return;
+  }
+
+  // console.log("128. Monster selected:", monsters[monsterId]);
   // console.log("129. ID of previously selected monster:", selectedMonsterId);
   // console.log("130. Selecting the same monster: ", selectedMonsterId === monsterId);
 
@@ -173,7 +181,7 @@ function selectMonster(monsterId, hex) {
   selectedMonsterId = monsterId;
   // console.log("141. Monsters object: ", monsters);
   // console.log("142. selectedMonsterId: ", selectedMonsterId);
-  const { position } = monsters[monsterId];
+  const { position } = selectedMonster;
   hex.classList.add("monster-selected");
 
   // Call the highlightValidPath function to highlight the valid path for the selected monster
