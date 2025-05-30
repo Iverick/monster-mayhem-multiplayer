@@ -97,11 +97,6 @@ function displayGameHints() {
   toggleHintsVisibility();
 }
 
-function toggleHintsVisibility() {
-  const playerCount = Object.keys(allPlayers).length;
-  (playerCount >= 2) ? gameHintsContainer.style.display = 'block' : gameHintsContainer.style.display = 'none';
-}
-
 // This function is used to draw monsters on the board
 function drawMonsters() {
   clearMonsters();
@@ -229,34 +224,6 @@ function highlightValidPath(row, col) {
   }
 }
 
-// This function checks if the path is blocked by an enemy monster
-function isBlockedByEnemy (startRow, startCol, endRow, endCol) {
-  // Find the direction of the movement from the start position to the end position
-  const dRow = Math.sign(endRow - startRow);
-  const dCol = Math.sign(endCol - startCol);
-
-  // Calculate the first hexagon in the path of the start position
-  let r = startRow + dRow;
-  let c = startCol + dCol;
-
-  // Loop through the hexagons in the path until we reach the end position
-  while (r !== endRow || c !== endCol) {
-    // Check if the hexagon is occupied by an enemy monster
-    const occupied = Object.values(monsters).some(monster => 
-      monster.position.row === r &&
-      monster.position.col === c &&
-      parseInt(monster.playerId) !== parseInt(userId)
-    );
-    
-    if (occupied) return true;
-
-    r += dRow;
-    c += dCol;
-  }
-
-  return false;
-};
-
 // Function removes highlight-path class from hexes
 function clearPathHighlights() {
   document.querySelectorAll(".highlight-path").forEach((hex) => {
@@ -266,7 +233,9 @@ function clearPathHighlights() {
 }
 
 function handleMoveClick(event) {
-  // console.log("214. Move clicked");
+  console.log("214. Move clicked");
+  console.log("237. monsters on move click:", monsters);
+
   const target = event.currentTarget;
   if (!target.classList.contains("highlight-path") || !selectedMonsterId) return;
   
@@ -295,27 +264,6 @@ function handleMoveClick(event) {
   }, 0);
 }
 
-// This function is used to update the UI based on the number of players
-// If there are two players, the start button is enabled and waiting message is hidden
-function toggleControlsOverlay() {
-  const playerCount = Object.keys(allPlayers).length;
-  if (playerCount >= 2) {
-    startButton.disabled = false;
-    startButton.classList.add('enabled');
-    waitingMessage.textContent = 'Ready to start the game!';
-  } else {
-    startButton.disabled = true;
-    startButton.classList.remove('enabled');
-    waitingMessage.textContent = 'Waiting for another player to join...';
-  }
-}
-
-// This function is used to toggle the visibility of player stats block
-function toggleStatsVisibility() {
-  const playerCount = Object.keys(allPlayers).length;
-  (playerCount >= 2) ? playerStatsContainer.style.display = 'flex' : playerStatsContainer.style.display = 'none';
-}
-
 // startButton click handler that sends a message to the server to start the game
 startButton.addEventListener("click", () => {
   socket.send(JSON.stringify({ type: "start", id: userId }));
@@ -325,12 +273,25 @@ startButton.addEventListener("click", () => {
 // and listen for incoming messages
 window.onload = () => {
   socket.onmessage = (event) => {
-    // console.log("line 178: ", allPlayers.length);
     const message = JSON.parse(event.data);
 
-    console.log("263. Username check:", username);
-    console.log("264. userId check:", userId);
-    console.log("265. allPlayers check:", allPlayers);
+    console.log("277. Username check:", username);
+    console.log("278. userId check:", userId);
+    console.log("279. allPlayers check:", allPlayers);
+    console.log("280. monsters on receiving message:", monsters);
+
+    // On init message we initialize client with its userId
+    if (message.type === "init") {
+      console.log("Init message received", message);
+      userId = message.id;
+    }
+
+    // // On sync message we update the allPlayers object and make sure all players drawn on the board
+    if (message.type === "playerJoined") {
+      console.log("Player joined", message);
+      allPlayers = message.data.allPlayers;
+      toggleControlsOverlay();
+    }
 
     if (message.type === "start") {
       // console.log("197: Start message data object", message.data);
@@ -344,19 +305,6 @@ window.onload = () => {
       drawMonsters();
       displayPlayerStats();
       displayGameHints();
-    }
-
-    // On init message we initialize client with its userId
-    if (message.type === "init") {
-      console.log("Init message received", message);
-      userId = message.id;
-    }
-
-    // // On sync message we update the allPlayers object and make sure all players drawn on the board
-    if (message.type === "playerJoined") {
-      console.log("Player joined", message);
-      allPlayers = message.data.allPlayers;
-      toggleControlsOverlay();
     }
 
     // On update message update the monsters object and redraw monsters on the board
@@ -392,7 +340,7 @@ window.onload = () => {
 };
 
 socket.onopen = () => {
-  console.log("227: user: " + username);
+  console.log("342: user: " + username);
   socket.send(JSON.stringify({
     type: "identify",
     username: username,
