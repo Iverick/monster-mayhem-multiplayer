@@ -34,15 +34,17 @@ async function startGame (gameState, wss) {
         position: {
           row,
           col,
-        }
+        },
+        hasMoved: false,
       };
     })
   }
 
-  // Find the user by username, update their game stats, and store them in the userStats object
+  // Find the user by username, initializes player turn status, update their game stats, and store them in the userStats object
   for (const playerId in gameState.players) {
     console.log("44. serverHelper. startGame method: Check username for id: ", gameState.players[playerId]);
 
+    gameState.playersTurnCompleted[playerId] = false;
     const username = gameState.players[playerId];
     if (username) {
       const user = await User.findOne({ username });
@@ -57,6 +59,8 @@ async function startGame (gameState, wss) {
       }
     }
   }
+  
+  console.log("65. serverHelper. after initializing turn status: ", gameState);
 
   // Send start message to all players with the gameState object
   broadcastAll({ 
@@ -64,7 +68,7 @@ async function startGame (gameState, wss) {
     data: {
       players: gameState.players,
       stats: userStats,
-      monsters: gameState.monsters
+      monsters: gameState.monsters,
     },
   }, wss);
 }
@@ -110,9 +114,11 @@ function handleMove(messageData, gameState, wss) {
   } else {
     // No collision — apply move
     movingMonster.position = position;
+    movingMonster.hasMoved = true;
   }
 
-  // console.log("100. serverHelpers. Monster moved:", movingMonster);
+  // console.log("121. serverHelpers. Monster moved:", movingMonster);
+  // console.log("121. serverHelpers. Monsters after monster moved:", gameState.monsters);
 
   // Broadcast the new move to all clients
   broadcastAll({

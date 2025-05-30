@@ -62,6 +62,10 @@ let nextPlayerId = 1;
   //   "playerId1": "username1",
   //   "playerId2": "username2",
   // },
+  // playersTurnCompleted: {
+  //   "playerId1": true,
+  //   "playerId2": false,
+  // },
   // monsters: {
   //   "m_playerId1-monsterType": {
   //     playerId: "playerId1",
@@ -69,12 +73,14 @@ let nextPlayerId = 1;
   //     position: {
   //       row: 0,
   //       col: 0,
-  //     }
+  //     },
+  //     hasMoved: false,
   //   }
   // },
   // gameOver: false,
 const gameState = {
   players: {},
+  playersTurnCompleted: {},
   monsters: {},
   gameOver: false,
 };
