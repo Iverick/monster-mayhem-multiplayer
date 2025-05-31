@@ -85,6 +85,12 @@ const gameState = {
   gameOver: false,
 };
 
+// const monsterTypes = ['vampire', 'werewolf', 'ghost'];
+// TODO: Use simplified line 90 simplified for testing
+const MONSTER_TYPES = ['vampire', 'werewolf'];
+
+const userStats = {};
+
 wss.on("connection", (ws, req) => {
   console.log("New WebSocket connection");
 
@@ -120,7 +126,7 @@ wss.on("connection", (ws, req) => {
 
     // Handle game start event with a helper function
     if (messageData.type === "start") {
-      await startGame (gameState, wss);
+      await startGame (gameState, MONSTER_TYPES, userStats, wss);
       // console.log("gameState after after calling gameStart:", gameState);
     }
 

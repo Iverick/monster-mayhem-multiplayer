@@ -1,66 +1,32 @@
 const WebSocket = require("ws");
 const Game = require("../models/Game.js");
 const User = require("../models/User.js");
-const { resolveCollision, startNewRound, clearGameState, getUniqueRandomRows } = require("./gameHelpers.js");
-
-// const monsterTypes = ['vampire', 'werewolf', 'ghost'];
-// TODO: Use simplified line 7 simplified for testing
-const monsterTypes = ['vampire', 'werewolf'];
+const {
+  addMonsters,
+  getUserStats,
+  resolveCollision,
+  startNewRound,
+  clearGameState
+} = require("./gameHelpers.js");
 
 // Helper function that allows start the game by initializing monsters and modifying player data in the database
-async function startGame (gameState, wss) {
+async function startGame(gameState, monsterTypes, userStats, wss) {
   // Reset game over state
   gameState.gameOver = false;
 
-  const userStats = {};
-
-  // The following code is used to generate the monsters and their location for each player
-  // and store them in the gameState object
   for (const playerId in gameState.players) {
-    // Set the monster spawn column
-    const isEven = parseInt(playerId) % 2 === 0;
-    const col = isEven ? 0 : 9;
+    console.log("19. serverHelper. startGame method: Check username for id: ", gameState.players[playerId]);
+    // Add monsters to the game state for each player
+    addMonsters(gameState, playerId, monsterTypes);
 
-    // Set the monster spawn rows
-    const maxRow = 9;
-    const spawnRows = getUniqueRandomRows(monsterTypes.length, maxRow);
-
-    monsterTypes.forEach((type, index) => {
-      const monsterId = `m_${playerId}-${type}`;
-      const row = spawnRows[index];
-      gameState.monsters[monsterId] = {
-        playerId,
-        type,
-        position: {
-          row,
-          col,
-        },
-        hasMoved: false,
-      };
-    })
-  }
-
-  // Find the user by username, initializes player turn status, update their game stats, and store them in the userStats object
-  for (const playerId in gameState.players) {
-    console.log("44. serverHelper. startGame method: Check username for id: ", gameState.players[playerId]);
-
+    // Initializes player turn status
     gameState.playersTurnCompleted[playerId] = false;
-    const username = gameState.players[playerId];
-    if (username) {
-      const user = await User.findOne({ username });
-      user.games += 1;
-      await user.save();
 
-      userStats[playerId] = {
-        username,
-        wins: user.wins,
-        losses: user.losses,
-        games: user.games,
-      }
-    }
+    // Find the user by username, update their game stats, and store them in the userStats object
+    await getUserStats(gameState, playerId, userStats);
   }
   
-  console.log("65. serverHelper. after initializing turn status: ", gameState);
+  console.log("30. serverHelper. after initializing turn status: ", gameState);
 
   // Send start message to all players with the gameState object
   broadcastAll({ 

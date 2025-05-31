@@ -1,3 +1,46 @@
+const User = require("../models/User.js");
+
+// This function adds the monsters of each type and their location and stores them in the gameState object
+function addMonsters(gameState, playerId, monsterTypes) {
+  // Set the monster spawn column
+  const isEven = parseInt(playerId) % 2 === 0;
+  const col = isEven ? 0 : 9;
+
+  // Set the monster spawn rows
+  const maxRow = 9;
+  const spawnRows = getUniqueRandomRows(monsterTypes.length, maxRow);
+
+  monsterTypes.forEach((type, index) => {
+    const monsterId = `m_${playerId}-${type}`;
+    const row = spawnRows[index];
+    gameState.monsters[monsterId] = {
+      playerId,
+      type,
+      position: {
+        row,
+        col,
+      },
+      hasMoved: false,
+    };
+  })
+}
+
+async function getUserStats(gameState, playerId, userStats) {
+  const username = gameState.players[playerId];
+  if (username) {
+    const user = await User.findOne({ username });
+    user.games += 1;
+    await user.save();
+
+    userStats[playerId] = {
+      username,
+      wins: user.wins,
+      losses: user.losses,
+      games: user.games,
+    }
+  }
+}
+
 // This helper function resolves a collision between two monsters in a game.
 // It for the monster types collided and determines what monsters should be removed.
 function resolveCollision (attacker, attackerId, defender, defenderId) {
@@ -63,6 +106,8 @@ function startNewRound(gameState) {
 }
 
 module.exports = {
+  addMonsters,
+  getUserStats,
   clearGameState,
   getUniqueRandomRows,
   resolveCollision,
