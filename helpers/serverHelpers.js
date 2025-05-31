@@ -6,7 +6,9 @@ const {
   getUserStats,
   processCollision,
   startNewRound,
-  clearGameState
+  clearGameState,
+  updatePlayerTurnStatus,
+  checkRoundCompletion,
 } = require("./gameHelpers.js");
 
 // Helper function that allows start the game by initializing monsters and modifying player data in the database
@@ -75,20 +77,9 @@ function handleMove(messageData, gameState, wss) {
     movingMonster.hasMoved = true;
   }
 
-  // TODO: Refactor the playersTurnCompleted manipulations into a separate function
-  // Check if the player has moved all their monsters
-  const playerMonsters = Object.values(gameState.monsters).filter((monster) => String(monster.playerId) === String(userId));
-  const allPlayerMonstersMoved = playerMonsters.every((monster) => monster.hasMoved);
-  // If all monsters have moved, set the player's turn as completed
-  if (allPlayerMonstersMoved) {
-    gameState.playersTurnCompleted[userId] = true;
-  }
-
-  // TODO: End refactoring
-
-  // Check if all players have completed their turns
-  const allPlayersCompletedTurn = Object.values(gameState.playersTurnCompleted).every((completed) => completed);
-  if (allPlayersCompletedTurn) startNewRound(gameState);
+  // Check if the player has moved all their monsters and complete their turn
+  updatePlayerTurnStatus(gameState, userId);
+  checkRoundCompletion(gameState);
 
   // Broadcast the new move to all clients
   broadcastAll({
@@ -122,38 +113,6 @@ function handleEndTurn(gameState, playerId, wss) {
     type: "update",
     monsters: gameState.monsters,
     playersTurnCompleted: gameState.playersTurnCompleted,
-  }, wss);
-}
-
-// Function sets the game winner, updates the database with the win/loss counts, resets the game state and emits a gameOver message
-async function processGameOver(gameState, activePlayers, movingUserId, wss) {
-  let winnerPlayerId;
-
-  if (activePlayers.length === 1) {
-    winnerPlayerId = activePlayers[0];
-  } else {
-    // If no players left, the current player is the winner
-    winnerPlayerId = movingUserId; 
-  }
-
-  const winnerUsername = gameState.players[winnerPlayerId];
-
-  const loserPlayerId = Object.keys(gameState.players).find(id => id !== String(winnerPlayerId));
-  const loserUsername = gameState.players[loserPlayerId];
-
-  // Modify the number of wins and losses for the players
-  await User.findOneAndUpdate({ username: winnerUsername }, { $inc: { wins: 1 } });
-  await User.findOneAndUpdate({ username: loserUsername }, { $inc: { losses: 1 } });
-
-  // Reset game state
-  gameState.gameOver = true;
-  clearGameState(gameState);
-
-  // Broadcast game over message to all clients passing the winner and loser usernames
-  broadcastAll({
-    type: "gameOver",
-    winner: winnerUsername,
-    loser: loserUsername,
   }, wss);
 }
 
@@ -218,6 +177,38 @@ function checkGameOver(gameState, movingUserId, wss) {
   if (activePlayers.length < 2 && !gameState.gameOver) {
     processGameOver(gameState, activePlayers, movingUserId, wss)
   }
+}
+
+// Function sets the game winner, updates the database with the win/loss counts, resets the game state and emits a gameOver message
+async function processGameOver(gameState, activePlayers, movingUserId, wss) {
+  let winnerPlayerId;
+
+  if (activePlayers.length === 1) {
+    winnerPlayerId = activePlayers[0];
+  } else {
+    // If no players left, the current player is the winner
+    winnerPlayerId = movingUserId; 
+  }
+
+  const winnerUsername = gameState.players[winnerPlayerId];
+
+  const loserPlayerId = Object.keys(gameState.players).find(id => id !== String(winnerPlayerId));
+  const loserUsername = gameState.players[loserPlayerId];
+
+  // Modify the number of wins and losses for the players
+  await User.findOneAndUpdate({ username: winnerUsername }, { $inc: { wins: 1 } });
+  await User.findOneAndUpdate({ username: loserUsername }, { $inc: { losses: 1 } });
+
+  // Reset game state
+  gameState.gameOver = true;
+  clearGameState(gameState);
+
+  // Broadcast game over message to all clients passing the winner and loser usernames
+  broadcastAll({
+    type: "gameOver",
+    winner: winnerUsername,
+    loser: loserUsername,
+  }, wss);
 }
 
 // Function allows to get the username by playerId

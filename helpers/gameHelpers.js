@@ -25,6 +25,7 @@ function addMonsters(gameState, playerId, monsterTypes) {
   })
 }
 
+// Helper function that fetches and modifies user stats from the database, and updates the userStats object
 async function getUserStats(gameState, playerId, userStats) {
   const username = gameState.players[playerId];
   if (username) {
@@ -39,6 +40,37 @@ async function getUserStats(gameState, playerId, userStats) {
       games: user.games,
     }
   }
+}
+
+// Function check if the player has moved all their monsters and updates the gameState accordingly
+function updatePlayerTurnStatus(gameState, userId) {
+  const playerMonsters = Object.values(gameState.monsters).filter((monster) => String(monster.playerId) === String(userId));
+  const allPlayerMonstersMoved = playerMonsters.every((monster) => monster.hasMoved);
+  // If all monsters have moved, set the player's turn as completed
+  if (allPlayerMonstersMoved) {
+    gameState.playersTurnCompleted[userId] = true;
+  }
+}
+
+// Function checks if all players have completed their turns and its necessary to start a new round
+function checkRoundCompletion(gameState) {
+  const allPlayersCompletedTurn = Object.values(gameState.playersTurnCompleted).every((completed) => completed);
+  if (allPlayersCompletedTurn) startNewRound(gameState);
+}
+
+// Function resets the playersTurnCompleted and hasMoved status for all monsters if all players have completed their turns
+function startNewRound(gameState) {
+  // Reset all players' turn status for the next round
+  for (const playerId in gameState.playersTurnCompleted) {
+    gameState.playersTurnCompleted[playerId] = false;
+  }
+
+  // Reset hasMoved status for all monsters
+  Object.values(gameState.monsters).forEach((monster) => {
+    monster.hasMoved = false; 
+  });
+
+  console.log("72. gameHelpers. startNewRound. All players completed their moves. Starting new round...");
 }
 
 // Function processes the collision between movingMonster and another monster that belongs to a different player
@@ -105,27 +137,12 @@ function getUniqueRandomRows(count, maxRow) {
   return Array.from(rowsSet);
 }
 
-
-// Function resets the playersTurnCompleted and hasMoved status for all monsters if all players have completed their turns
-function startNewRound(gameState) {
-  // Reset all players' turn status for the next round
-  for (const playerId in gameState.playersTurnCompleted) {
-    gameState.playersTurnCompleted[playerId] = false;
-  }
-
-  // Reset hasMoved status for all monsters
-  Object.values(gameState.monsters).forEach((monster) => {
-    monster.hasMoved = false; 
-  });
-
-  console.log("64. gameHelpers. resetTurnData. All players completed their moves. Starting new round...");
-}
-
 module.exports = {
   addMonsters,
   getUserStats,
   clearGameState,
-  getUniqueRandomRows,
   processCollision,
   startNewRound,
+  updatePlayerTurnStatus,
+  checkRoundCompletion,
 };
