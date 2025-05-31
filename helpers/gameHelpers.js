@@ -41,6 +41,22 @@ async function getUserStats(gameState, playerId, userStats) {
   }
 }
 
+// Function processes the collision between movingMonster and another monster that belongs to a different player
+function processCollision(gameState, monsterId, movingMonster, destinationMonster, position) {
+  const [defenderId, defender] = destinationMonster;
+
+  // Get array of monster IDs to be removed
+  const { removed, winnerId } = resolveCollision(movingMonster, monsterId, defender, defenderId);
+
+  // Remove monsters from gameState based on the result
+  removed.forEach((monsterId) => delete gameState.monsters[monsterId]);
+
+  // If there is a winner of the monster collision, update its position as passed in the message
+  if (winnerId) {
+    gameState.monsters[winnerId].position = position;
+  }
+}
+
 // This helper function resolves a collision between two monsters in a game.
 // It for the monster types collided and determines what monsters should be removed.
 function resolveCollision (attacker, attackerId, defender, defenderId) {
@@ -110,6 +126,6 @@ module.exports = {
   getUserStats,
   clearGameState,
   getUniqueRandomRows,
-  resolveCollision,
+  processCollision,
   startNewRound,
 };

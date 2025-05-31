@@ -4,7 +4,7 @@ const User = require("../models/User.js");
 const {
   addMonsters,
   getUserStats,
-  resolveCollision,
+  processCollision,
   startNewRound,
   clearGameState
 } = require("./gameHelpers.js");
@@ -46,7 +46,7 @@ function handleMove(messageData, gameState, wss) {
   const movingMonster = gameState.monsters[monsterId];
   if (!movingMonster) return;
 
-  console.log("64. serverHelpers. handleMove. Monster to be moved:", movingMonster);
+  console.log("49. serverHelpers. handleMove. Monster to be moved:", movingMonster);
 
   // Check if the monster belongs to the player
   if (String(movingMonster.playerId) !== String(userId)) {
@@ -54,8 +54,7 @@ function handleMove(messageData, gameState, wss) {
     return;
   }
 
-  // TODO: Refactor the playersTurnCompleted manipulations into a separate checkCollision function
-  // Check if there is a collision with another monster object that belongs to a different player
+  // Find if there is a monster at the destination position that belongs to a different player
   const destinationMonster = Object.entries(gameState.monsters).find(([id, monster]) => {
     return id !== monsterId && 
             monster.position.row === position.row && 
@@ -64,28 +63,17 @@ function handleMove(messageData, gameState, wss) {
   });
 
   if (destinationMonster) {
-    const [defenderId, defender] = destinationMonster;
-
-    // Get array of monster IDs to be removed
-    const { removed, winnerId } = resolveCollision(movingMonster, monsterId, defender, defenderId);
-
-    // Remove monsters from gameState based on the result
-    removed.forEach((monsterId) => delete gameState.monsters[monsterId]);
-
-    // If there is a winner of the monster collision, update its position as passed in the message
-    if (winnerId) {
-      gameState.monsters[winnerId].position = position;
-    }
-
+    processCollision(gameState, monsterId, movingMonster, destinationMonster, position);
+    
     // Check if the game is over after resolving the collision
     checkGameOver(gameState, userId, wss);
   }
 
-  // TODO: End refactoring
-
-  // No collision — apply move
-  movingMonster.position = position;
-  movingMonster.hasMoved = true;
+  // If monster survived, update its position
+  if (gameState.monsters[monsterId]) {
+    movingMonster.position = position;
+    movingMonster.hasMoved = true;
+  }
 
   // TODO: Refactor the playersTurnCompleted manipulations into a separate function
   // Check if the player has moved all their monsters
@@ -267,4 +255,5 @@ module.exports = {
   getUsernameById,
   broadcastAll,
   broadcastExcept,
+  checkGameOver,
 }
