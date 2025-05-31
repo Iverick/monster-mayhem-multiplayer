@@ -130,7 +130,43 @@ function handleMove(messageData, gameState, wss) {
     gameState.playersTurnCompleted[userId] = true;
   }
 
+  // TODO: End refactoring
+
   // Check if all players have completed their turns
+  resetTurnData(gameState);
+
+  // Broadcast the new move to all clients
+  broadcastAll({
+    type: "update",
+    monsters: gameState.monsters,
+    playersTurnCompleted: gameState.playersTurnCompleted,
+  }, wss);
+}
+
+// Function handles the end of the player's turn
+// It sets the player's turn as completed, resets the hasMoved flag for their monsters
+function handleEndTurn(gameState, playerId, wss) {
+  gameState.playersTurnCompleted[playerId] = true;
+  Object.values(gameState.monsters).forEach((monster) => {
+    if (String(monster.playerId) === String(playerId)) {
+      // Reset the hasMoved flag for the player's monsters
+      monster.hasMoved = true; 
+    }
+  });
+
+  // Check if all players have completed their turns
+  resetTurnData(gameState);
+
+  // Broadcast the new round state to all clients
+  broadcastAll({
+    type: "update",
+    monsters: gameState.monsters,
+    playersTurnCompleted: gameState.playersTurnCompleted,
+  }, wss);
+}
+
+// Function resets the playersTurnCompleted and hasMoved status for all monsters if all players have completed their turns
+function resetTurnData(gameState) {
   const allPlayersCompletedTurn = Object.values(gameState.playersTurnCompleted).every((completed) => completed);
   if (allPlayersCompletedTurn) {
     // Reset all players' turn status for the next round
@@ -143,22 +179,8 @@ function handleMove(messageData, gameState, wss) {
       monster.hasMoved = false; 
     });
 
-    console.log("146. serverHelpers. handleMove. All players completed their moves. Starting new round...");
+    console.log("182. serverHelpers. resetTurnData. All players completed their moves. Starting new round...");
   }
-
-  // TODO: End refactoring
-
-  // console.log("129. serverHelpers. Monster moved:", movingMonster);
-  // console.log("130. serverHelpers. Monsters after monster moved:", gameState.monsters);
-  // console.log("131. serverHelpers. handleMove. Player monsters:", playerMonsters);
-  // console.log("132. serverHelpers. handleMove. Player turn completed:", gameState.playersTurnCompleted);
-  
-  // Broadcast the new move to all clients
-  broadcastAll({
-    type: "update",
-    monsters: gameState.monsters,
-    playersTurnCompleted: gameState.playersTurnCompleted,
-  }, wss);
 }
 
 // Function sets the game winner, updates the database with the win/loss counts, resets the game state and emits a gameOver message
@@ -286,6 +308,7 @@ function broadcastExcept(exceptClient, message, wss) {
 module.exports = {
   startGame,
   handleMove,
+  handleEndTurn,
   handleDisconnection,
   getUsernameById,
   broadcastAll,

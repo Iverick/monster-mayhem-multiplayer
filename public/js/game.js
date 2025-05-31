@@ -20,6 +20,7 @@ const startButton = document.getElementById('start-button');
 const waitingMessage = document.getElementById('waiting-message');
 const playerStatsContainer = document.getElementById('player-stats');
 const gameHintsContainer = document.getElementById('game-hints');
+const endTurnButton = document.getElementById('end-turn-button');
 
 const monsterIcons = {
   vampire: "🧛",
@@ -278,6 +279,11 @@ function handleMoveClick(event) {
 startButton.addEventListener("click", () => {
   socket.send(JSON.stringify({ type: "start", id: userId }));
 });
+
+endTurnButton.addEventListener("click", () => {
+  console.log("284. End turn button clicked by user: ", userId);
+  socket.send(JSON.stringify({ type: "endTurnButton" }));
+})
 
 // This function is used to create a WebSocket connection on the browser window load
 // and listen for incoming messages

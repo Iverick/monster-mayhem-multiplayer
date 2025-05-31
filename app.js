@@ -9,7 +9,7 @@ const passport = require("./config/passportInit.js");
 const { PORT, MONGO_URI, SESSION_SECRET_KEY } = require("./config/config");
 const authRoutes = require("./routes/authRoutes.js");
 const User = require("./models/User.js");
-const { getUsernameById, broadcastAll, broadcastExcept, handleDisconnection, handleMove, startGame } = require("./helpers/serverHelpers.js");
+const { getUsernameById, broadcastAll, broadcastExcept, handleDisconnection, handleEndTurn, handleMove, startGame } = require("./helpers/serverHelpers.js");
 
 const app = express();
 
@@ -130,6 +130,11 @@ wss.on("connection", (ws, req) => {
     // Also check for the end of the game after processing the collision
     if (messageData.type === "move") {
       handleMove(messageData, gameState, wss);
+    }
+
+    if (messageData.type === "endTurnButton") {
+      // Mark the player's turn as completed
+      handleEndTurn(gameState, playerId, wss);
     }
   });
 
