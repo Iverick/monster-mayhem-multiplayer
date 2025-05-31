@@ -52,3 +52,19 @@ function toggleHintsVisibility() {
   const playerCount = Object.keys(allPlayers).length;
   (playerCount >= 2) ? gameHintsContainer.style.display = 'block' : gameHintsContainer.style.display = 'none';
 }
+
+// Helper function to toggle the board and waiting turn message styles based on whether the player has completed their turn
+function toggleBoardAvailability() {
+  // console.log("277. toggleBoardDisplay called");
+  // console.log(`278. Updated playersTurnCompleted: ${playersTurnCompleted[userId]} for local player with userID ${userId}`);
+
+  if (playersTurnCompleted[userId]) {
+    board.style.opacity = "0.4";
+    waitingTurnMsg.textContent = "Waiting for other players to finish their turn...";
+    waitingTurnMsg.style.color = "red";
+  } else {
+    board.style.opacity = "1";
+    waitingTurnMsg.textContent = "Move your monsters!";
+    waitingTurnMsg.style.color = "green";
+  }
+}

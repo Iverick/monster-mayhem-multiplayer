@@ -135,6 +135,12 @@ body {
   margin-right: 20px;
 }
 
+.waiting-turn-msg {
+  margin-top: 10px;
+  text-align: center;
+  height: 20px;
+}
+
 /* Styling board */
 .board {
   margin-top: 60px;

@@ -15,7 +15,7 @@ let justMoved = false;
 // Get access to the root div#board element on index.html page
 // Which will be later populated with rows of hexagons
 const board = document.getElementById("board");
-
+const waitingTurnMsg = document.getElementById("waiting-turn-msg");
 const startButton = document.getElementById('start-button');
 const waitingMessage = document.getElementById('waiting-message');
 const playerStatsContainer = document.getElementById('player-stats');
@@ -316,6 +316,7 @@ window.onload = () => {
       drawMonsters();
       displayPlayerStats();
       displayGameHints();
+      toggleBoardAvailability();
     }
 
     // On update message update the monsters object and redraw monsters on the board
@@ -323,8 +324,8 @@ window.onload = () => {
       console.log("Updated monsters received: ", message.monsters);
       monsters = message.monsters;
       playersTurnCompleted = message.playersTurnCompleted;
-      console.log(`326. Updated playersTurnCompleted: ${playersTurnCompleted[userId]} for local player with userID ${userId}`);
       drawMonsters();
+      toggleBoardAvailability();
     }
 
     // On remove message we remove the character from the board and delete it from allPlayers object

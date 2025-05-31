@@ -88,6 +88,7 @@ function handleMove(messageData, gameState, wss) {
     return;
   }
 
+  // TODO: Refactor the playersTurnCompleted manipulations into a separate checkCollision function
   // Check if there is a collision with another monster object that belongs to a different player
   const destinationMonster = Object.entries(gameState.monsters).find(([id, monster]) => {
     return id !== monsterId && 
@@ -114,10 +115,13 @@ function handleMove(messageData, gameState, wss) {
     checkGameOver(gameState, userId, wss);
   }
 
+  // TODO: End refactoring
+
   // No collision — apply move
   movingMonster.position = position;
   movingMonster.hasMoved = true;
 
+  // TODO: Refactor the playersTurnCompleted manipulations into a separate function
   // Check if the player has moved all their monsters
   const playerMonsters = Object.values(gameState.monsters).filter((monster) => String(monster.playerId) === String(userId));
   const allPlayerMonstersMoved = playerMonsters.every((monster) => monster.hasMoved);
@@ -125,6 +129,19 @@ function handleMove(messageData, gameState, wss) {
   if (allPlayerMonstersMoved) {
     gameState.playersTurnCompleted[userId] = true;
   }
+
+  // Check if all players have completed their turns
+  const allPlayersCompletedTurn = Object.values(gameState.playersTurnCompleted).every((completed) => completed);
+  if (allPlayersCompletedTurn) {
+    // Reset all players' turn status for the next round
+    for (const playerId in gameState.playersTurnCompleted) {
+      gameState.playersTurnCompleted[playerId] = false;
+    }
+
+    console.log("137. serverHelpers. handleMove. All players completed their moves. Starting new round...");
+  }
+
+  // TODO: End refactoring
 
   // console.log("129. serverHelpers. Monster moved:", movingMonster);
   // console.log("130. serverHelpers. Monsters after monster moved:", gameState.monsters);
