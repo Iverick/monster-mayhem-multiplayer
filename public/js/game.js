@@ -103,13 +103,14 @@ function drawMonsters() {
   clearMonsters();
 
   for (const id in monsters) {
-    const { playerId: ownerId, type, position } = monsters[id];
+    const { playerId: ownerId, type, position, hasMoved } = monsters[id];
     // console.log("151: Monster data", `{ownerId: ${ownerId}, type: ${type}, position: ${position}}`);
     const hex = document.querySelector(
       `.hex[data-row="${position.row}"][data-col="${position.col}"]`
     );
     if (hex) {
       hex.classList.add("monster", `player-${ownerId % 2 === 0 ? 'even' : 'odd'}`);
+      if (hasMoved && String(ownerId) === String(userId)) hex.classList.add("monster-moved");
       
       // Create an <i> tag for the monster icon
       const icon = document.createElement("div");
@@ -141,7 +142,7 @@ function clearMonsters() {
 
   hexes.forEach(hex => {
     // Remove all monster-related classes and icons from the hexagon grid
-    hex.classList.remove("monster", "player-even", "player-odd", "monster-selected");
+    hex.classList.remove("monster", "player-even", "player-odd", "monster-selected", "monster-moved");
 
     // Remove any monster icons
     const icon = hex.querySelector("div.monster-icon");

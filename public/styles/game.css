@@ -215,6 +215,12 @@ body {
   color: white;
 }
 
+.monster-moved {
+  opacity: 0.6;
+  filter: grayscale(100%);
+  font-size: 15px;
+}
+
 .monster-icon {
   pointer-events: none;
 }
