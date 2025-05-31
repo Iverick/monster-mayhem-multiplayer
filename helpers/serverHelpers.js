@@ -138,7 +138,12 @@ function handleMove(messageData, gameState, wss) {
       gameState.playersTurnCompleted[playerId] = false;
     }
 
-    console.log("137. serverHelpers. handleMove. All players completed their moves. Starting new round...");
+    // Reset hasMoved status for all monsters
+    Object.values(gameState.monsters).forEach((monster) => {
+      monster.hasMoved = false; 
+    });
+
+    console.log("146. serverHelpers. handleMove. All players completed their moves. Starting new round...");
   }
 
   // TODO: End refactoring
