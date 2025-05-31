@@ -68,3 +68,7 @@ function toggleBoardAvailability() {
     waitingTurnMsg.style.color = "green";
   }
 }
+
+function toggleEndButtonAvailability() {
+  playersTurnCompleted[userId] ? endTurnButton.disabled = true : endTurnButton.disabled = false;
+}

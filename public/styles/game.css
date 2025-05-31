@@ -249,3 +249,34 @@ body {
   margin-bottom: 8px;
   font-size: 16px;
 }
+
+/* End Turn Button Styles */
+.end-turn {
+  display: none;
+}
+
+.end-turn-button {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  background-color: #4CAF50; /* green */
+  color: white;
+  padding: 12px 24px;
+  font-size: 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.end-turn-button:hover {
+  background-color: #45a049;
+  transform: scale(1.05);
+}
+
+.end-turn-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  box-shadow: none;
+}

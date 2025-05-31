@@ -20,6 +20,7 @@ const startButton = document.getElementById('start-button');
 const waitingMessage = document.getElementById('waiting-message');
 const playerStatsContainer = document.getElementById('player-stats');
 const gameHintsContainer = document.getElementById('game-hints');
+const endTurnButtonContainer = document.getElementById('end-turn');
 const endTurnButton = document.getElementById('end-turn-button');
 
 const monsterIcons = {
@@ -99,6 +100,10 @@ function displayGameHints() {
   toggleHintsVisibility();
 }
 
+function displayEndTurnButton() {
+  endTurnButtonContainer.style.display = "block";
+}
+
 // This function is used to draw monsters on the board
 function drawMonsters() {
   clearMonsters();
@@ -126,13 +131,13 @@ function drawMonsters() {
 
     if (parseInt(ownerId) === parseInt(userId)) {
       // First remove the old listener if it exists
-        hex.removeEventListener("click", hex._clickHandler);
+      hex.removeEventListener("click", hex._clickHandler);
 
-        // Create and store a new named click handler
-        const handler = () => selectMonster(id, hex);
-        hex._clickHandler = handler;
+      // Create and store a new named click handler
+      const handler = () => selectMonster(id, hex);
+      hex._clickHandler = handler;
 
-        hex.addEventListener("click", handler);
+      hex.addEventListener("click", handler);
     }
   }
 }
@@ -281,7 +286,6 @@ startButton.addEventListener("click", () => {
 });
 
 endTurnButton.addEventListener("click", () => {
-  console.log("284. End turn button clicked by user: ", userId);
   socket.send(JSON.stringify({ type: "endTurnButton" }));
 })
 
@@ -323,6 +327,7 @@ window.onload = () => {
       drawMonsters();
       displayPlayerStats();
       displayGameHints();
+      displayEndTurnButton();
       toggleBoardAvailability();
     }
 
@@ -333,6 +338,7 @@ window.onload = () => {
       playersTurnCompleted = message.playersTurnCompleted;
       drawMonsters();
       toggleBoardAvailability();
+      toggleEndButtonAvailability();
     }
 
     // On remove message we remove the character from the board and delete it from allPlayers object
