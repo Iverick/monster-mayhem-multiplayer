@@ -1,7 +1,7 @@
 const WebSocket = require("ws");
 const Game = require("../models/Game.js");
 const User = require("../models/User.js");
-const { resolveCollision, clearGameState, getUniqueRandomRows } = require("./gameHelpers.js");
+const { resolveCollision, startNewRound, clearGameState, getUniqueRandomRows } = require("./gameHelpers.js");
 
 // const monsterTypes = ['vampire', 'werewolf', 'ghost'];
 // TODO: Use simplified line 7 simplified for testing
@@ -133,7 +133,8 @@ function handleMove(messageData, gameState, wss) {
   // TODO: End refactoring
 
   // Check if all players have completed their turns
-  resetTurnData(gameState);
+  const allPlayersCompletedTurn = Object.values(gameState.playersTurnCompleted).every((completed) => completed);
+  if (allPlayersCompletedTurn) startNewRound(gameState);
 
   // Broadcast the new move to all clients
   broadcastAll({
@@ -147,15 +148,20 @@ function handleMove(messageData, gameState, wss) {
 // It sets the player's turn as completed, resets the hasMoved flag for their monsters
 function handleEndTurn(gameState, playerId, wss) {
   gameState.playersTurnCompleted[playerId] = true;
-  Object.values(gameState.monsters).forEach((monster) => {
-    if (String(monster.playerId) === String(playerId)) {
-      // Reset the hasMoved flag for the player's monsters
-      monster.hasMoved = true; 
-    }
-  });
-
+  
   // Check if all players have completed their turns
-  resetTurnData(gameState);
+  const allPlayersCompletedTurn = Object.values(gameState.playersTurnCompleted).every((completed) => completed);
+  if (!allPlayersCompletedTurn) {
+    // Reset the hasMoved flag for the player's monsters
+    Object.values(gameState.monsters).forEach((monster) => {
+      if (String(monster.playerId) === String(playerId)) {
+        monster.hasMoved = true; 
+      }
+    });
+  } else {
+    // Start a new round if all players have completed their turns
+    startNewRound(gameState);
+  }
 
   // Broadcast the new round state to all clients
   broadcastAll({
@@ -163,24 +169,6 @@ function handleEndTurn(gameState, playerId, wss) {
     monsters: gameState.monsters,
     playersTurnCompleted: gameState.playersTurnCompleted,
   }, wss);
-}
-
-// Function resets the playersTurnCompleted and hasMoved status for all monsters if all players have completed their turns
-function resetTurnData(gameState) {
-  const allPlayersCompletedTurn = Object.values(gameState.playersTurnCompleted).every((completed) => completed);
-  if (allPlayersCompletedTurn) {
-    // Reset all players' turn status for the next round
-    for (const playerId in gameState.playersTurnCompleted) {
-      gameState.playersTurnCompleted[playerId] = false;
-    }
-
-    // Reset hasMoved status for all monsters
-    Object.values(gameState.monsters).forEach((monster) => {
-      monster.hasMoved = false; 
-    });
-
-    console.log("182. serverHelpers. resetTurnData. All players completed their moves. Starting new round...");
-  }
 }
 
 // Function sets the game winner, updates the database with the win/loss counts, resets the game state and emits a gameOver message

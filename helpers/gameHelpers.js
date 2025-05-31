@@ -46,8 +46,25 @@ function getUniqueRandomRows(count, maxRow) {
   return Array.from(rowsSet);
 }
 
+
+// Function resets the playersTurnCompleted and hasMoved status for all monsters if all players have completed their turns
+function startNewRound(gameState) {
+  // Reset all players' turn status for the next round
+  for (const playerId in gameState.playersTurnCompleted) {
+    gameState.playersTurnCompleted[playerId] = false;
+  }
+
+  // Reset hasMoved status for all monsters
+  Object.values(gameState.monsters).forEach((monster) => {
+    monster.hasMoved = false; 
+  });
+
+  console.log("64. gameHelpers. resetTurnData. All players completed their moves. Starting new round...");
+}
+
 module.exports = {
   clearGameState,
   getUniqueRandomRows,
   resolveCollision,
+  startNewRound,
 };
