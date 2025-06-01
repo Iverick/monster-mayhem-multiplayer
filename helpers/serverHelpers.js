@@ -131,6 +131,7 @@ async function handleDisconnection (gameState, leftPlayerId = playerId, ws, wss)
   const gameEntry = await Game.create({
     players: gameState.players,
     monsters: gameState.monsters,
+    playersTurnCompleted: gameState.playersTurnCompleted,
     status: "paused",
   })
 

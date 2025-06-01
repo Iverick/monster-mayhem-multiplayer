@@ -123,6 +123,7 @@ function resolveCollision (attacker, attackerId, defender, defenderId) {
 function clearGameState(gameState) {
   gameState.players = {};
   gameState.monsters = {};
+  gameState.playersTurnCompleted = {};
 }
 
 // This function generates a array of unique random rows values between 0 and 9

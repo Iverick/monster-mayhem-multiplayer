@@ -13,6 +13,11 @@ const gameSchema = new mongoose.Schema({
       required: true,
     },
   },
+  playersTurnCompleted: {
+    type: Map,
+    of: Boolean,
+    default: {},
+  },
   createdAt: { type: Date, default: Date.now },
   status: { type: String, enum: ["active", "paused", "finished"], default: "paused" },
 });

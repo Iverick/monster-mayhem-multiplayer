@@ -85,12 +85,13 @@ const gameState = {
   gameOver: false,
 };
 
-// const monsterTypes = ['vampire', 'werewolf', 'ghost'];
+// const MONSTER_TYPES = ['vampire', 'werewolf', 'ghost'];
 // TODO: Use simplified line 90 simplified for testing
 const MONSTER_TYPES = ['vampire', 'werewolf'];
 
 const userStats = {};
 
+// Websocket connection handler
 wss.on("connection", (ws, req) => {
   console.log("New WebSocket connection");
 
@@ -131,15 +132,12 @@ wss.on("connection", (ws, req) => {
     }
 
     // Handle monster movement
-    // Update the gameState object with the new position of the monster and broadcast the updated monster object to all clients
-    // Also check for collisions with other monsters and resolve them
-    // Also check for the end of the game after processing the collision
     if (messageData.type === "move") {
       handleMove(messageData, gameState, wss);
     }
 
+    // Mark the player's turn as completed
     if (messageData.type === "endTurnButton") {
-      // Mark the player's turn as completed
       handleEndTurn(gameState, playerId, wss);
     }
   });
