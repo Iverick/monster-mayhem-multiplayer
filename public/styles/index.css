@@ -1,0 +1,31 @@
+/* index page styles */
+.landing-page {
+  text-align: center;
+  margin-top: 100px;
+  font-family: 'Arial', sans-serif;
+}
+
+.button-container {
+  margin-top: 40px;
+}
+
+.btn {
+  display: inline-block;
+  margin: 0 15px;
+  padding: 15px 30px;
+  font-size: 18px;
+  background-color: #4444aa;
+  color: white;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: background 0.3s;
+}
+
+.btn:hover {
+  background-color: #333388;
+}
+
+.btn-disabled {
+  pointer-events: none;
+  opacity: 0.5;
+}

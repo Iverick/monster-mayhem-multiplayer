@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Monster Mayhem</title>
+  <link rel="stylesheet" href="styles/index.css">
+</head>
+<body>
+  <div class="landing-page">
+    <h1>👾 Welcome to Monster Mayhem!</h1>
+    <div class="button-container">
+      <a href="/game" class="btn">Start New Game</a>
+
+      <% if (lastGameId) { %>
+        <a href="/game/<%= lastGameId %>" class="btn">Resume Last Game</a>
+      <% } else { %>
+        <a class="btn btn-disabled disabled" href="#" onclick="return false;">
+          Resume Last Game (Unavailable)
+        </a>
+      <% } %>
+    </div>
+  </div>
+</body>
+</html>

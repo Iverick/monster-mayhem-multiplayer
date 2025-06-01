@@ -9,6 +9,7 @@ const passport = require("./config/passportInit.js");
 const { PORT, MONGO_URI, SESSION_SECRET_KEY } = require("./config/config");
 const authRoutes = require("./routes/authRoutes.js");
 const User = require("./models/User.js");
+const Game = require("./models/Game.js");
 const { getUsernameById, broadcastAll, broadcastExcept, handleDisconnection, handleEndTurn, handleMove, startGame } = require("./helpers/serverHelpers.js");
 
 const app = express();
@@ -44,6 +45,17 @@ app.use(express.static("public"));
 
 // Routes setup
 app.use("/", authRoutes);
+app.get("/", async (req, res) => {
+  if (!(req.isAuthenticated())) {
+    return res.redirect("/login");
+  }
+
+  console.log("index route " + req.user);
+  const userObj = await User.findOne({ username: req.user.username });
+  const lastGameId = userObj.gameId?.toString();
+  res.render("index.ejs", { lastGameId });
+});
+
 app.get("/game", (req, res) => {
   if (!(req.isAuthenticated())) return res.redirect("/login");
 
