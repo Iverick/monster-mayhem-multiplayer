@@ -293,74 +293,80 @@ endTurnButton.addEventListener("click", () => {
 // and listen for incoming messages
 window.onload = () => {
   socket.onmessage = (event) => {
-    const message = JSON.parse(event.data);
+    try {
+      const message = JSON.parse(event.data);
 
-    console.log("277. Username check:", username);
-    console.log("278. userId check:", userId);
-    console.log("279. allPlayers check:", allPlayers);
-    console.log("280. monsters on receiving message:", monsters);
+      console.log("277. Username check:", username);
+      console.log("278. userId check:", userId);
+      console.log("279. allPlayers check:", allPlayers);
+      console.log("280. monsters on receiving message:", monsters);
 
-    // On init message we initialize client with its userId
-    if (message.type === "init") {
-      console.log("Init message received", message);
-      userId = message.id;
-    }
-
-    // // On sync message we update the allPlayers object and make sure all players drawn on the board
-    if (message.type === "playerJoined") {
-      console.log("Player joined", message);
-      allPlayers = message.data.allPlayers;
-      toggleControlsOverlay();
-    }
-
-    if (message.type === "start") {
-      // console.log("197: Start message data object", message.data);
-      monsters = message.data.monsters;
-      stats = message.data.stats;
-      playersTurnCompleted = message.data.playersTurnCompleted;
-      console.log("310. onStart playersTurnCompleted: ", playersTurnCompleted);
-
-      //Remove overlay here so it no longer displayed for all players
-      document.getElementById('game-controls').style.display = 'none';
-      // Setup the board with hexagons and add the character for every player to the starting position
-      setupBoard();
-      drawMonsters();
-      displayPlayerStats();
-      displayGameHints();
-      displayEndTurnButton();
-      toggleBoardAvailability();
-    }
-
-    // On update message update the monsters object and redraw monsters on the board
-    if (message.type === "update") {
-      console.log("Updated monsters received: ", message.monsters);
-      monsters = message.monsters;
-      playersTurnCompleted = message.playersTurnCompleted;
-      drawMonsters();
-      toggleBoardAvailability();
-      toggleEndButtonAvailability();
-    }
-
-    // On remove message we remove the character from the board and delete it from allPlayers object
-    // This is used when a player disconnects and we need to remove their character from the game
-    if (message.type === "gamePaused") {
-      alert(`Player ${message.leftPlayerUsername} left the game! You can restart it later.`);
-      window.location.href = "/me"; // Redirect to the profile page
-    }
-
-    // On gameOver message we alert the user about the game result and redirect to the profile page
-    if (message.type === "gameOver") {
-      const { winner, loser } = message;
-
-      // Alert the user about the game result
-      if (username === winner) {
-        alert(`🎉 Congratulations! You won the game against ${loser}.`);
-      } else {
-        alert(`😢 Game over!  You lost against ${winner}.`);
+      // On init message we initialize client with its userId
+      if (message.type === "init") {
+        console.log("Init message received", message);
+        userId = message.id;
       }
 
-      // Redirect to the profile page after the game is over
-      window.location.href = "/me";
+      // // On sync message we update the allPlayers object and make sure all players drawn on the board
+      if (message.type === "playerJoined") {
+        console.log("Player joined", message);
+        allPlayers = message.data.allPlayers;
+        toggleControlsOverlay();
+      }
+
+      if (message.type === "start") {
+        // console.log("197: Start message data object", message.data);
+        monsters = message.data.monsters;
+        stats = message.data.stats;
+        playersTurnCompleted = message.data.playersTurnCompleted;
+        console.log("310. onStart playersTurnCompleted: ", playersTurnCompleted);
+
+        //Remove overlay here so it no longer displayed for all players
+        document.getElementById('game-controls').style.display = 'none';
+        // Setup the board with hexagons and add the character for every player to the starting position
+        setupBoard();
+        drawMonsters();
+        displayPlayerStats();
+        displayGameHints();
+        displayEndTurnButton();
+        toggleBoardAvailability();
+      }
+
+      // On update message update the monsters object and redraw monsters on the board
+      if (message.type === "update") {
+        console.log("Updated monsters received: ", message.monsters);
+        monsters = message.monsters;
+        playersTurnCompleted = message.playersTurnCompleted;
+        drawMonsters();
+        toggleBoardAvailability();
+        toggleEndButtonAvailability();
+      }
+
+      // On remove message we remove the character from the board and delete it from allPlayers object
+      // This is used when a player disconnects and we need to remove their character from the game
+      if (message.type === "gamePaused") {
+        alert(`Player ${message.leftPlayerUsername} left the game! You can restart it later.`);
+        window.location.href = "/me"; // Redirect to the profile page
+      }
+
+      // On gameOver message we alert the user about the game result and redirect to the profile page
+      if (message.type === "gameOver") {
+        const { winner, loser } = message;
+
+        // Alert the user about the game result
+        if (username === winner) {
+          alert(`🎉 Congratulations! You won the game against ${loser}.`);
+        } else {
+          alert(`😢 Game over!  You lost against ${winner}.`);
+        }
+
+        // Redirect to the profile page after the game is over
+        window.location.href = "/me";
+      }
+    } catch (e) {
+      // Right now errors will be passed as a plain text and displayed as an alert
+      alert(event.data);
+      window.location.href = "https://www.youtube.com/watch?v=dQw4w9WgXcQ&ab_channel=RickAstley";
     }
   };
 };

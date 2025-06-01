@@ -107,18 +107,29 @@ const userStats = {};
 wss.on("connection", (ws, req) => {
   console.log("New WebSocket connection");
 
-  const playerId = nextPlayerId++;
+  let playerId = null;
 
   // Message WebSocket handler
   ws.on("message", async (message) => {
     console.log("Received:", message);
-    console.log("99. gameState object:", gameState);
+    console.log("115. gameState object:", gameState);
 
     const messageData = JSON.parse(message);
 
     if (messageData.type === "identify") {
-      console.log("112: Identify message received " + messageData.username);
+      console.log("121: Identify message received " + messageData.username);
       const username = messageData.username;
+
+      // Check if the same User already tried to connect the game
+      const isAlreadyConnected = Object.values(gameState.players).includes(username);
+      if (isAlreadyConnected) {
+        console.log(`Duplicate identify attempt: ${username} is already in the game.`);
+        ws.send("You are already connected to the game.");
+        ws.close();
+        return;
+      }
+
+      playerId = nextPlayerId++;
       gameState.players[playerId] = username;
 
       // Send init message after registering the player and assingintg the username
@@ -156,7 +167,7 @@ wss.on("connection", (ws, req) => {
 
   // Handle player disconnection
   ws.on("close", async () => {
-    await handleDisconnection(gameState, playerId, ws, wss);
+    if (playerId) await handleDisconnection(gameState, playerId, ws, wss);
     // console.log("Updated gameState after player disconnection:", gameState);
   });
 });
