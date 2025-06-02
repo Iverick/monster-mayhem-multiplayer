@@ -44,7 +44,6 @@ app.set("view engine", "ejs");
 app.use(express.static("public"));
 
 // Routes setup
-app.use("/", authRoutes);
 app.get("/", async (req, res) => {
   if (!(req.isAuthenticated())) {
     return res.redirect("/login");
@@ -54,6 +53,15 @@ app.get("/", async (req, res) => {
   const userObj = await User.findOne({ username: req.user.username });
   const lastGameId = userObj.gameId?.toString();
   res.render("index.ejs", { lastGameId });
+});
+
+app.use("/", authRoutes);
+
+app.get("/game/:gameId", async (req, res) => {
+  const { gameId } = req.params;
+  const pausedGame = await Game.findOne({ _id: gameId });
+
+  res.send(pausedGame);
 });
 
 app.get("/game", (req, res) => {
@@ -129,6 +137,15 @@ wss.on("connection", (ws, req) => {
         return;
       }
 
+      // Check if the lobby is full (limit to 2 players)
+      const currentPlayerCount = Object.keys(gameState.players).length;
+      if (currentPlayerCount >= 2) {
+        ws.send("Lobby is full. Cannot join the game.");
+        ws.close();
+        return;
+      }
+
+      // Initialize player and add him to the gameState
       playerId = nextPlayerId++;
       gameState.players[playerId] = username;
 
