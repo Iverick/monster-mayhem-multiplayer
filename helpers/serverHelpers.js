@@ -11,6 +11,23 @@ const {
   checkRoundCompletion,
 } = require("./gameHelpers.js");
 
+function initializeNewGame(gameState, playerId, ws, wss) {
+  // Send init message after registering the player and assingintg the username
+  ws.send(JSON.stringify({ 
+    type: "init",
+    id: playerId,
+    allPlayers: gameState.players,
+  }));
+  
+  // Inform all clients about the new player joining
+  broadcastAll({ 
+    type: "playerJoined",
+    data: {
+      allPlayers: gameState.players,
+    },
+  }, wss);
+}
+
 // Helper function that allows start the game by initializing monsters and modifying player data in the database
 async function startGame(gameState, monsterTypes, userStats, wss) {
   // Reset game over state
@@ -248,4 +265,5 @@ module.exports = {
   broadcastAll,
   broadcastExcept,
   checkGameOver,
+  initializeNewGame,
 }

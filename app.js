@@ -10,7 +10,13 @@ const { PORT, MONGO_URI, SESSION_SECRET_KEY } = require("./config/config");
 const authRoutes = require("./routes/authRoutes.js");
 const User = require("./models/User.js");
 const Game = require("./models/Game.js");
-const { getUsernameById, broadcastAll, broadcastExcept, handleDisconnection, handleEndTurn, handleMove, startGame } = require("./helpers/serverHelpers.js");
+const { 
+  handleDisconnection,
+  handleEndTurn,
+  handleMove,
+  startGame,
+  initializeNewGame,
+} = require("./helpers/serverHelpers.js");
 
 const app = express();
 
@@ -75,29 +81,29 @@ const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
 // Variables required for the game setup
-let nextPlayerId = 1;
-  // Maps playerId to { row, col }
-  // Object structure is:
-  // players: {
-  //   "playerId1": "username1",
-  //   "playerId2": "username2",
-  // },
-  // playersTurnCompleted: {
-  //   "playerId1": true,
-  //   "playerId2": false,
-  // },
-  // monsters: {
-  //   "m_playerId1-monsterType": {
-  //     playerId: "playerId1",
-  //     type: "monsterType",
-  //     position: {
-  //       row: 0,
-  //       col: 0,
-  //     },
-  //     hasMoved: false,
-  //   }
-  // },
-  // gameOver: false,
+
+// gameState object stores main game info
+// Object structure is:
+// players: {
+//   "playerId1": "username1",
+//   "playerId2": "username2",
+// },
+// playersTurnCompleted: {
+//   "playerId1": true,
+//   "playerId2": false,
+// },
+// monsters: {
+//   "m_playerId1-monsterType": {
+//     playerId: "playerId1",
+//     type: "monsterType",
+//     position: {
+//       row: 0,
+//       col: 0,
+//     },
+//     hasMoved: false,
+//   }
+// },
+// gameOver: false,
 const gameState = {
   players: {},
   playersTurnCompleted: {},
@@ -110,22 +116,24 @@ const gameState = {
 const MONSTER_TYPES = ['vampire', 'werewolf'];
 
 const userStats = {};
+  
+let playerId = null;
 
 // Websocket connection handler
 wss.on("connection", (ws, req) => {
   console.log("New WebSocket connection");
-
-  let playerId = null;
+  
+  console.log("126. playerId:", playerId);
 
   // Message WebSocket handler
   ws.on("message", async (message) => {
     console.log("Received:", message);
-    console.log("115. gameState object:", gameState);
+    console.log("131. gameState object:", gameState);
 
     const messageData = JSON.parse(message);
 
     if (messageData.type === "identify") {
-      console.log("121: Identify message received " + messageData.username);
+      console.log("136: Identify message received " + messageData.username);
       const username = messageData.username;
 
       // Check if the same User already tried to connect the game
@@ -146,23 +154,10 @@ wss.on("connection", (ws, req) => {
       }
 
       // Initialize player and add him to the gameState
-      playerId = nextPlayerId++;
+      playerId = playerId + 1;
       gameState.players[playerId] = username;
 
-      // Send init message after registering the player and assingintg the username
-      ws.send(JSON.stringify({ 
-        type: "init",
-        id: playerId,
-        allPlayers: gameState.players,
-      }));
-
-      // Inform all clients about the new player joining
-      broadcastAll({ 
-        type: "playerJoined",
-        data: {
-          allPlayers: gameState.players,
-        },
-      }, wss);
+      initializeNewGame(gameState, playerId, ws, wss);
     }
 
     // Handle game start event with a helper function
