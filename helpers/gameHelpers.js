@@ -25,6 +25,16 @@ function addMonsters(gameState, playerIndex, playerId, monsterTypes) {
   })
 }
 
+// Function populates gameState with existing game data
+function resumeGame(gameState, gameDoc) {
+  gameState.players = {}; // Reset players (rejoin fresh)
+  gameState.monsters = Object.fromEntries(gameDoc.monsters);
+  gameState.playersTurnCompleted = Object.fromEntries(gameDoc.playersTurnCompleted);
+  gameState.gameStart = true;
+
+  // console.log("35. gameHelpers. resumeGame. Resuming game with state:", gameState);
+}
+
 // Helper function that fetches and modifies user stats from the database, and updates the userStats object
 async function getUserStats(gameState, playerId, userStats) {
   const username = gameState.players[playerId];
@@ -123,11 +133,13 @@ function resolveCollision (attacker, attackerId, defender, defenderId) {
 }
 
 // This resets the game state by clearing all players and monsters
-function clearGameState(gameState) {
+function clearGameState(gameState, activeGameIdObj) {
   gameState.players = {};
   gameState.monsters = {};
   gameState.playersTurnCompleted = {};
   gameState.gameStart = false;
+
+  activeGameIdObj.activeGameId = "";
 }
 
 // This function generates a array of unique random rows values between 0 and 9
@@ -150,4 +162,5 @@ module.exports = {
   startNewRound,
   updatePlayerTurnStatus,
   checkRoundCompletion,
+  resumeGame,
 };

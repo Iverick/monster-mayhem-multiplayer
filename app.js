@@ -9,13 +9,12 @@ const passport = require("./config/passportInit.js");
 const { PORT, MONGO_URI, SESSION_SECRET_KEY } = require("./config/config");
 const authRoutes = require("./routes/authRoutes.js");
 const User = require("./models/User.js");
-const Game = require("./models/Game.js");
 const { 
   handleDisconnection,
   handleEndTurn,
   handleMove,
   startGame,
-  initializeNewGame,
+  identifyPlayer,
 } = require("./helpers/serverHelpers.js");
 
 const app = express();
@@ -55,7 +54,6 @@ app.get("/", async (req, res) => {
     return res.redirect("/login");
   }
 
-  console.log("index route " + req.user);
   const userObj = await User.findOne({ username: req.user.username });
   const lastGameId = userObj.gameId?.toString();
   res.render("index.ejs", { lastGameId });
@@ -122,7 +120,9 @@ const gameState = {
 const MONSTER_TYPES = ['vampire', 'werewolf'];
 
 const userStats = {};
-let activeGameId = "";
+const activeGameIdObj = {
+  activeGameId: "",
+}
 
 // Websocket connection handler
 wss.on("connection", (ws, req) => {
@@ -138,92 +138,22 @@ wss.on("connection", (ws, req) => {
     const messageData = JSON.parse(message);
 
     if (messageData.type === "identify") {
-      console.log("136: Identify message received " + messageData.username);
       const { username, pausedGameId } = messageData;
-
-      console.log("141. pausedGameId:", pausedGameId);
-
-      // Check if the same User already tried to connect the game
-      const isAlreadyConnected = Object.values(gameState.players).includes(username);
-      if (isAlreadyConnected) {
-        console.log(`Duplicate identify attempt: ${username} is already in the game.`);
-        ws.send("You are already connected to the game.");
-        ws.close();
-        return;
-      }
-
-      // Check if the lobby is full (limit to 2 players)
-      const currentPlayerCount = Object.keys(gameState.players).length;
-      if (currentPlayerCount >= 2) {
-        ws.send("Lobby is full. Cannot join the game.");
-        ws.close();
-        return;
-      }
-
       // Initialize player
       const user = await User.findOne({ username });
       playerId = String(user._id);
 
-      // // Resume game logic
-      if (pausedGameId) {
-        const pausedGame = await Game.findById(pausedGameId);
-
-        if (!pausedGame) {
-          ws.send("Game not found.");
-          ws.close();
-          return;
-        }
-
-        // First time resuming
-        if (!activeGameId) {
-          await resumeGame(gameState, pausedGame);
-          activeGameId = String(pausedGame._id);
-        }
-
-        // Prevent other players from joining game to be resumed
-        if (String(pausedGame._id) !== activeGameId) {
-          ws.send("You cannot join a game lobby right now.");
-          ws.close();
-          return;
-        }
-
-        console.log("184. pausedGame.players: " + Array.from(pausedGame.players.keys()))
-        console.log("185. playerId: " + playerId)
-        const isParticipant = Array.from(pausedGame.players.keys()).some((participantId) =>
-          participantId === playerId
-        );
-
-        if (!isParticipant) {
-          ws.send("You are not a participant of this game.");
-          ws.close();
-          return;
-        }
-      } else {
-        // Can't join a game if there is a resume game in progress
-        if (activeGameId) {
-          ws.send("You cannot start a new game while another is in progress.");
-          ws.close();
-          return;
-        }
-      }
-
-      // Add new player to the gameState
-      gameState.players[playerId] = username;
-      
-      console.log("212. resume game. gameState: " + Object.entries(gameState.players));
-
-      initializeNewGame(gameState, playerId, ws, wss);
+      await identifyPlayer(username, pausedGameId, gameState, activeGameIdObj, playerId, ws, wss);
     }
 
     // Handle game start event with a helper function
     if (messageData.type === "start") {
       await startGame (gameState, MONSTER_TYPES, userStats, wss);
-      // console.log("gameState after after calling gameStart:", gameState);
     }
 
     // Handle monster movement
     if (messageData.type === "move") {
-      handleMove(messageData, gameState, wss);
+      handleMove(messageData, gameState, activeGameIdObj, wss);
     }
 
     // Mark the player's turn as completed
@@ -234,21 +164,10 @@ wss.on("connection", (ws, req) => {
 
   // Handle player disconnection
   ws.on("close", async () => {
-    await handleDisconnection(gameState, playerId, ws, wss);
-    // console.log("Updated gameState after player disconnection:", gameState);
+    await handleDisconnection(gameState, activeGameIdObj, playerId, ws, wss);
   });
 });
 
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
-
-async function resumeGame(gameState, gameDoc) {
-  // Populate gameState with existing game data
-  gameState.players = {}; // Reset players (rejoin fresh)
-  gameState.monsters = Object.fromEntries(gameDoc.monsters);
-  gameState.playersTurnCompleted = Object.fromEntries(gameDoc.playersTurnCompleted);
-  gameState.gameStart = true;
-
-  console.log("253. Resuming game with state:", gameState);
-}

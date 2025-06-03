@@ -9,7 +9,73 @@ const {
   clearGameState,
   updatePlayerTurnStatus,
   checkRoundCompletion,
+  resumeGame,
 } = require("./gameHelpers.js");
+
+async function identifyPlayer(username, pausedGameId, gameState, activeGameIdObj, playerId, ws, wss) {
+  // Check if the same User already tried to connect the game
+  const isAlreadyConnected = Object.values(gameState.players).includes(username);
+  if (isAlreadyConnected) {
+    console.log(`Duplicate identify attempt: ${username} is already in the game.`);
+    ws.send("You are already connected to the game.");
+    ws.close();
+    return;
+  }
+
+  // Check if the lobby is full (limit to 2 players)
+  const currentPlayerCount = Object.keys(gameState.players).length;
+  if (currentPlayerCount >= 2) {
+    ws.send("Lobby is full. Cannot join the game.");
+    ws.close();
+    return;
+  }
+
+  // Resume game logic - guarding from unauthorized access
+  if (pausedGameId) {
+    const pausedGame = await Game.findById(pausedGameId);
+
+    if (!pausedGame) {
+      ws.send("Game not found.");
+      ws.close();
+      return;
+    }
+
+    // First time resuming
+    if (!activeGameIdObj.activeGameId) {
+      await resumeGame(gameState, pausedGame);
+      activeGameIdObj.activeGameId = String(pausedGame._id);
+    }
+
+    // Prevent other players from joining game to be resumed
+    if (String(pausedGame._id) !== activeGameIdObj.activeGameId) {
+      ws.send("You cannot join a game lobby right now.");
+      ws.close();
+      return;
+    }
+
+    const isParticipant = Array.from(pausedGame.players.keys()).some((participantId) =>
+      participantId === playerId
+    );
+
+    if (!isParticipant) {
+      ws.send("You are not a participant of this game.");
+      ws.close();
+      return;
+    }
+  } else {
+    // Can't join a game if there is a resume game in progress
+    if (activeGameIdObj.activeGameId) {
+      ws.send("You cannot start a new game while another is in progress.");
+      ws.close();
+      return;
+    }
+  }
+
+  // Add new player to the gameState
+  gameState.players[playerId] = username;
+      
+  initializeNewGame(gameState, playerId, ws, wss);
+}
 
 function initializeNewGame(gameState, playerId, ws, wss) {
   // Send init message after registering the player and assingintg the username
@@ -63,7 +129,7 @@ async function startGame(gameState, monsterTypes, userStats, wss) {
   }, wss);
 }
 
-function handleMove(messageData, gameState, wss) {
+function handleMove(messageData, gameState, activeGameIdObj, wss) {
   console.log("123. Player moved:", messageData);
   const { monsterId, position, userId } = messageData;
   const movingMonster = gameState.monsters[monsterId];
@@ -89,7 +155,7 @@ function handleMove(messageData, gameState, wss) {
     processCollision(gameState, monsterId, movingMonster, destinationMonster, position);
     
     // Check if the game is over after resolving the collision
-    checkGameOver(gameState, userId, wss);
+    checkGameOver(gameState, activeGameIdObj, userId, wss);
   }
 
   // If monster survived, update its position
@@ -139,14 +205,13 @@ function handleEndTurn(gameState, playerId, wss) {
 
 // Helper function to handle player disconnection
 // It stores the game state in the database and notifies the remaining player
-async function handleDisconnection (gameState, leftPlayerId = playerId, ws, wss) {
+async function handleDisconnection (gameState, activeGameIdObj, leftPlayerId = playerId, ws, wss) {
   // gameState.gameOver prevents the game from being processed and stored twice in the database
   if (gameState.gameOver || !leftPlayerId || !(gameState.gameStart)) return;
-  gameState.gameOver = true;
+  if (Object.keys(gameState.players).length < 2) return;
 
   const leftPlayerUsername = gameState.players[leftPlayerId];
-
-  console.log(`Player ${leftPlayerId} (${leftPlayerUsername}) disconnected`);
+  gameState.gameOver = true;
 
   // Create a new game entry in the database to store the current game state
   const gameEntry = await Game.create({
@@ -163,7 +228,7 @@ async function handleDisconnection (gameState, leftPlayerId = playerId, ws, wss)
   await User.findOneAndUpdate({ username: leftPlayerUsername }, { gameId: gameEntry._id });
   await User.findOneAndUpdate({ username: remainingPlayerUsername }, { gameId: gameEntry._id });
 
-  clearGameState(gameState);
+  clearGameState(gameState, activeGameIdObj);
 
   // Notify other player that the game is over
   broadcastExcept(ws, {
@@ -173,7 +238,7 @@ async function handleDisconnection (gameState, leftPlayerId = playerId, ws, wss)
 }
 
 // Function to check if there is a game over condition after a move
-function checkGameOver(gameState, movingUserId, wss) {
+function checkGameOver(gameState, activeGameIdObj, movingUserId, wss) {
   // After collision resolution, check if a player has lost all monsters
   const playerMonsterCounts = {};
 
@@ -197,12 +262,12 @@ function checkGameOver(gameState, movingUserId, wss) {
 
   // If one or no players remain with monsters, declare the game over and set a winner of the game
   if (activePlayers.length < 2 && !gameState.gameOver) {
-    processGameOver(gameState, activePlayers, movingUserId, wss)
+    processGameOver(gameState, activeGameIdObj, activePlayers, movingUserId, wss)
   }
 }
 
 // Function sets the game winner, updates the database with the win/loss counts, resets the game state and emits a gameOver message
-async function processGameOver(gameState, activePlayers, movingUserId, wss) {
+async function processGameOver(gameState, activeGameIdObj, activePlayers, movingUserId, wss) {
   let winnerPlayerId;
 
   if (activePlayers.length === 1) {
@@ -223,7 +288,7 @@ async function processGameOver(gameState, activePlayers, movingUserId, wss) {
 
   // Reset game state
   gameState.gameOver = true;
-  clearGameState(gameState);
+  clearGameState(gameState, activeGameIdObj);
 
   // Broadcast game over message to all clients passing the winner and loser usernames
   broadcastAll({
@@ -270,4 +335,5 @@ module.exports = {
   broadcastExcept,
   checkGameOver,
   initializeNewGame,
+  identifyPlayer,
 }
