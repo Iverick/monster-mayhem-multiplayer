@@ -1,24 +1,18 @@
 const express = require("express");
 const http = require("http");
-const WebSocket = require("ws");
 const mongoose = require("mongoose");
 const session = require("express-session");
 const MongoStore = require("connect-mongo");
 
+const setupWebSocketServer = require("./websocketServer");
 const passport = require("./config/passportInit.js");
 const { PORT, MONGO_URI, SESSION_SECRET_KEY } = require("./config/config");
 const authRoutes = require("./routes/authRoutes.js");
 const gameRoutes = require("./routes/gameRoutes.js");
 const User = require("./models/User.js");
-const { 
-  handleDisconnection,
-  handleEndTurn,
-  handleMove,
-  startGame,
-  identifyPlayer,
-} = require("./helpers/serverHelpers.js");
 
 const app = express();
+const server = http.createServer(app);
 
 // Connect to MongoDB
 mongoose.connect(MONGO_URI)
@@ -63,14 +57,33 @@ app.get("/", async (req, res) => {
 app.use("/", authRoutes);
 app.use("/game", gameRoutes);
 
-// WebSocket server setup
-const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
-
 // Variables required for the game setup
-
 // gameState object stores main game info
-// Object structure is:
+const gameState = {
+  players: {},
+  playersTurnCompleted: {},
+  monsters: {},
+  gameOver: false,
+  gameStart: false,
+};
+
+// const MONSTER_TYPES = ['vampire', 'werewolf', 'ghost'];
+// TODO: Use simplified line 90 simplified for testing
+const MONSTER_TYPES = ['vampire', 'werewolf'];
+const userStats = {};
+const activeGameIdObj = {
+  activeGameId: "",
+}
+
+// WebSocket server setup
+setupWebSocketServer(server, gameState, MONSTER_TYPES, userStats, activeGameIdObj);
+
+server.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
+
+// gameState structure is:
+// gameState: {
 // players: {
 //   "playerId1": "username1",
 //   "playerId2": "username2",
@@ -83,77 +96,10 @@ const wss = new WebSocket.Server({ server });
 //   "m_playerId1-monsterType": {
 //     playerId: "playerId1",
 //     type: "monsterType",
-//     position: {
-//       row: 0,
-//       col: 0,
-//     },
+//     position: { row: 0, col: 0, },
 //     hasMoved: false,
 //   }
 // },
 // gameOver: false,
 // gameStart: false,
-const gameState = {
-  players: {},
-  playersTurnCompleted: {},
-  monsters: {},
-  gameOver: false,
-  gameStart: false,
-};
-
-// const MONSTER_TYPES = ['vampire', 'werewolf', 'ghost'];
-// TODO: Use simplified line 90 simplified for testing
-const MONSTER_TYPES = ['vampire', 'werewolf'];
-
-const userStats = {};
-const activeGameIdObj = {
-  activeGameId: "",
-}
-
-// Websocket connection handler
-wss.on("connection", (ws, req) => {
-  console.log("New WebSocket connection");
-  
-  let playerId = null;
-
-  // Message WebSocket handler
-  ws.on("message", async (message) => {
-    console.log("Received:", message);
-    console.log("131. gameState object:", gameState);
-
-    const messageData = JSON.parse(message);
-
-    if (messageData.type === "identify") {
-      const { username, pausedGameId } = messageData;
-      // Initialize player
-      const user = await User.findOne({ username });
-      playerId = String(user._id);
-
-      await identifyPlayer(username, pausedGameId, gameState, activeGameIdObj, playerId, ws, wss);
-    }
-
-    // Handle game start event with a helper function
-    if (messageData.type === "start") {
-      console.log("151. app. new game - activeGameId must be null: " + activeGameIdObj.activeGameId)
-      await startGame (gameState, MONSTER_TYPES, userStats, wss);
-    }
-
-    // Handle monster movement
-    if (messageData.type === "move") {
-      handleMove(messageData, gameState, activeGameIdObj, wss);
-    }
-
-    // Mark the player's turn as completed
-    if (messageData.type === "endTurnButton") {
-      handleEndTurn(gameState, playerId, wss);
-    }
-  });
-
-  // Handle player disconnection
-  ws.on("close", async () => {
-    handleDisconnection(gameState, activeGameIdObj, playerId, ws, wss);
-  });
-});
-
-server.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+// }
