@@ -303,13 +303,24 @@ async function processGameOver(gameState, activeGameIdObj, activePlayers, moving
   }
 
   const winnerUsername = gameState.players[winnerPlayerId];
-
   const loserPlayerId = Object.keys(gameState.players).find(id => id !== String(winnerPlayerId));
   const loserUsername = gameState.players[loserPlayerId];
 
   // Modify the number of wins and losses for the players
   await User.findOneAndUpdate({ username: winnerUsername }, { $inc: { wins: 1 } });
   await User.findOneAndUpdate({ username: loserUsername }, { $inc: { losses: 1 } });
+
+  // Update game status in DB and clear gameId for both users if the game was resumed 
+  if (activeGameIdObj.activeGameId) {
+    await Game.findByIdAndUpdate(activeGameIdObj.activeGameId, {
+      status: "finished",
+    });
+
+    await User.updateMany(
+      { username: { $in: [winnerUsername, loserUsername] } },
+      { $unset: { gameId: "" } },
+    );
+  }
 
   // Reset game state
   gameState.gameOver = true;
