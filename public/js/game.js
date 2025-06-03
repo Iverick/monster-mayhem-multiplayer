@@ -6,6 +6,7 @@ let userId = null;
 // }
 let allPlayers = {};
 let playersTurnCompleted = {};
+let playerIndices = [];
 // This variable is used to store all monsters and their positions received from the server
 let monsters = {};
 let stats = {};
@@ -74,25 +75,26 @@ function setupBoard() {
 
 // This function is used to display player stats in the child components of the declared player-stats placeholder
 function displayPlayerStats() {
-  console.log("Player stats: ", stats);
+  console.log("78. stats: ", stats);
 
-  for (const id in stats) {
+  Object.keys(stats).forEach((id, index) => {
     const playerStats = stats[id];
-    const position = id % 2 === 0 ? "even" : "odd";
+    const position = index % 2 === 0 ? "even" : "odd";
 
     // Populate the player stats container elements with the player stats
     document.getElementById(`player-${position}-username`).textContent = playerStats.username;
     document.getElementById(`player-${position}-games`).textContent = playerStats.games;
     document.getElementById(`player-${position}-wins`).textContent = playerStats.wins;
     document.getElementById(`player-${position}-losses`).textContent = playerStats.losses;
-  }
+  });
 
   // Call this function to make player-stats placeholder visible
   toggleStatsVisibility();
 }
 
 function displayGameHints() {
-  const playerColor = userId % 2 === 0 ? "red" : "blue";
+  const playerIndex = playerIndices.indexOf(userId); 
+  const playerColor = playerIndex % 2 === 0 ? "red" : "blue";
   const playerColorIndicator = document.getElementById("player-color-indicator");
   playerColorIndicator.textContent = `${playerColor}`;
   playerColorIndicator.style.color = `${playerColor}`;
@@ -115,7 +117,9 @@ function drawMonsters() {
       `.hex[data-row="${position.row}"][data-col="${position.col}"]`
     );
     if (hex) {
-      hex.classList.add("monster", `player-${ownerId % 2 === 0 ? 'even' : 'odd'}`);
+      const playerIndex = playerIndices.indexOf(ownerId); 
+
+      hex.classList.add("monster", `player-${playerIndex % 2 === 0 ? 'even' : 'odd'}`);
       if (hasMoved && String(ownerId) === String(userId)) hex.classList.add("monster-moved");
       
       // Create an <i> tag for the monster icon
@@ -129,7 +133,7 @@ function drawMonsters() {
       hex.appendChild(icon);
     }
 
-    if (parseInt(ownerId) === parseInt(userId)) {
+    if (String(ownerId) === String(userId)) {
       // First remove the old listener if it exists
       hex.removeEventListener("click", hex._clickHandler);
 
@@ -319,6 +323,7 @@ window.onload = () => {
         monsters = message.data.monsters;
         stats = message.data.stats;
         playersTurnCompleted = message.data.playersTurnCompleted;
+        playerIndices = Object.keys(allPlayers);
         console.log("310. onStart playersTurnCompleted: ", playersTurnCompleted);
 
         //Remove overlay here so it no longer displayed for all players
@@ -372,9 +377,11 @@ window.onload = () => {
 };
 
 socket.onopen = () => {
-  console.log("342: user: " + username);
+  console.log("372: user: " + username);
+  console.log("376: user: " + gameId);
   socket.send(JSON.stringify({
     type: "identify",
-    username: username,
+    username,
+    pausedGameId: gameId,
   }));
 }

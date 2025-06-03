@@ -65,9 +65,11 @@ app.use("/", authRoutes);
 
 app.get("/game/:gameId", async (req, res) => {
   const { gameId } = req.params;
-  const pausedGame = await Game.findOne({ _id: gameId });
 
-  res.send(pausedGame);
+  res.render("game.ejs", { 
+    user: req.user,
+    gameId: gameId || null
+  });
 });
 
 app.get("/game", (req, res) => {
@@ -104,11 +106,13 @@ const wss = new WebSocket.Server({ server });
 //   }
 // },
 // gameOver: false,
+// gameStart: false,
 const gameState = {
   players: {},
   playersTurnCompleted: {},
   monsters: {},
   gameOver: false,
+  gameStart: false,
 };
 
 // const MONSTER_TYPES = ['vampire', 'werewolf', 'ghost'];
@@ -116,14 +120,13 @@ const gameState = {
 const MONSTER_TYPES = ['vampire', 'werewolf'];
 
 const userStats = {};
-  
-let playerId = null;
+let activeGameId = "";
 
 // Websocket connection handler
 wss.on("connection", (ws, req) => {
   console.log("New WebSocket connection");
   
-  console.log("126. playerId:", playerId);
+  let playerId = null;
 
   // Message WebSocket handler
   ws.on("message", async (message) => {
@@ -134,7 +137,9 @@ wss.on("connection", (ws, req) => {
 
     if (messageData.type === "identify") {
       console.log("136: Identify message received " + messageData.username);
-      const username = messageData.username;
+      const { username, pausedGameId } = messageData;
+
+      console.log("141. pausedGameId:", pausedGameId);
 
       // Check if the same User already tried to connect the game
       const isAlreadyConnected = Object.values(gameState.players).includes(username);
@@ -153,8 +158,54 @@ wss.on("connection", (ws, req) => {
         return;
       }
 
+      // // Resume game logic
+      // if (pausedGameId) {
+      //   const pausedGame = await Game.findById(pausedGameId);
+
+      //   if (!pausedGame) {
+      //     ws.send("Game not found.");
+      //     ws.close();
+      //     return;
+      //   }
+
+      //   // First time resuming
+      //   if (!activeGameId) {
+      //     await resumeGame(gameState, pausedGame);
+      //     activeGameId = pausedGame._id.toString();
+      //   }
+
+      //   // Prevent other players from joining game to be resumed
+      //   if (pausedGame._id.toString() !== activeGameId) {
+      //     ws.send("You cannot join a game lobby right now.");
+      //     ws.close();
+      //     return;
+      //   }
+
+      //   // Check if username is one of the original players
+      //   const user = await User.findOne({ username });
+
+      //   // NOT GOING TO WORK
+      //   const isParticipant = pausedGame.players.some((playerId) =>
+      //     playerId.equals(user._id)
+      //   );
+
+      //   if (!isParticipant) {
+      //     ws.send("You are not a participant of this game.");
+      //     ws.close();
+      //     return;
+      //   }
+      // } else {
+      //   // Can't join a game if there is a resume game in progress
+      //   if (activeGameId) {
+      //     ws.send("You cannot start a new game while another is in progress.");
+      //     ws.close();
+      //     return;
+      //   }
+      // }
+
       // Initialize player and add him to the gameState
-      playerId = playerId + 1;
+      const user = await User.findOne({ username });
+      playerId = String(user._id);
       gameState.players[playerId] = username;
 
       initializeNewGame(gameState, playerId, ws, wss);
@@ -179,7 +230,7 @@ wss.on("connection", (ws, req) => {
 
   // Handle player disconnection
   ws.on("close", async () => {
-    if (playerId) await handleDisconnection(gameState, playerId, ws, wss);
+    await handleDisconnection(gameState, playerId, ws, wss);
     // console.log("Updated gameState after player disconnection:", gameState);
   });
 });
@@ -187,3 +238,12 @@ wss.on("connection", (ws, req) => {
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
+
+async function resumeGame(gameState, gameDoc) {
+  // Populate gameState with existing game data
+  gameState.players = {}; // Reset players (rejoin fresh)
+  gameState.monsters = gameDoc.monsters;
+  gameState.playersTurnCompleted = gameDoc.playersTurnCompleted || {};
+
+  console.log("Resuming game with state:", gameState);
+}

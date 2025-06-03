@@ -65,6 +65,12 @@
     <script>
       // Inject username variable into the game script
       const username = "<%= user.username %>";
+
+      <% if (typeof gameId !== 'undefined' && gameId) { %>
+        const gameId = "<%= gameId %>";
+      <% } else { %>
+        const gameId = null;
+      <% } %>
     </script>
   </body>
 </html>

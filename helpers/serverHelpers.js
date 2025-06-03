@@ -30,13 +30,16 @@ function initializeNewGame(gameState, playerId, ws, wss) {
 
 // Helper function that allows start the game by initializing monsters and modifying player data in the database
 async function startGame(gameState, monsterTypes, userStats, wss) {
-  // Reset game over state
+  // Reset game state flags
   gameState.gameOver = false;
+  gameState.gameStart = true;
 
-  for (const playerId in gameState.players) {
-    console.log("19. serverHelper. startGame method: Check username for id: ", gameState.players[playerId]);
+  const playerIds = Object.keys(gameState.players);
+  
+  for (let index = 0; index < playerIds.length; index++) {
+    const playerId = playerIds[index];
     // Add monsters to the game state for each player
-    addMonsters(gameState, playerId, monsterTypes);
+    addMonsters(gameState, index, playerId, monsterTypes);
 
     // Initializes player turn status
     gameState.playersTurnCompleted[playerId] = false;
@@ -136,8 +139,8 @@ function handleEndTurn(gameState, playerId, wss) {
 // Helper function to handle player disconnection
 // It stores the game state in the database and notifies the remaining player
 async function handleDisconnection (gameState, leftPlayerId = playerId, ws, wss) {
-  // This guard prevents the game from being processed and stored twice in the database
-  if (gameState.gameOver) return;
+  // gameState.gameOver prevents the game from being processed and stored twice in the database
+  if (gameState.gameOver || !leftPlayerId || !(gameState.gameStart)) return;
   gameState.gameOver = true;
 
   const leftPlayerUsername = gameState.players[leftPlayerId];

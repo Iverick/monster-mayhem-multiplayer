@@ -1,9 +1,9 @@
 const User = require("../models/User.js");
 
 // This function adds the monsters of each type and their location and stores them in the gameState object
-function addMonsters(gameState, playerId, monsterTypes) {
+function addMonsters(gameState, playerIndex, playerId, monsterTypes) {
   // Set the monster spawn column
-  const isEven = parseInt(playerId) % 2 === 0;
+  const isEven = parseInt(playerIndex) % 2 === 0;
   const col = isEven ? 0 : 9;
 
   // Set the monster spawn rows
@@ -124,6 +124,7 @@ function clearGameState(gameState) {
   gameState.players = {};
   gameState.monsters = {};
   gameState.playersTurnCompleted = {};
+  gameState.gameStart = false;
 }
 
 // This function generates a array of unique random rows values between 0 and 9
