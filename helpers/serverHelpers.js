@@ -203,30 +203,55 @@ function handleEndTurn(gameState, playerId, wss) {
   }, wss);
 }
 
-// Helper function to handle player disconnection
-// It stores the game state in the database and notifies the remaining player
+// Helper function to handle socket disconnection
 async function handleDisconnection (gameState, activeGameIdObj, leftPlayerId = playerId, ws, wss) {
   // gameState.gameOver prevents the game from being processed and stored twice in the database
-  if (gameState.gameOver || !leftPlayerId || !(gameState.gameStart)) return;
-  if (Object.keys(gameState.players).length < 2) return;
+  if (!(gameState.gameOver) &&
+        leftPlayerId &&
+        gameState.gameStart &&
+        (Object.keys(gameState.players).length >= 2)) {
+    await savePausedGame(gameState, activeGameIdObj, leftPlayerId, ws, wss);
+  }
+}
 
+// Function stores the paused game state in the database and notifies the remaining player
+async function savePausedGame(gameState, activeGameIdObj, leftPlayerId, ws, wss) {
+  console.log("219. serverHelpers. savePausedgame called!")
   const leftPlayerUsername = gameState.players[leftPlayerId];
   gameState.gameOver = true;
-
-  // Create a new game entry in the database to store the current game state
-  const gameEntry = await Game.create({
-    players: gameState.players,
-    monsters: gameState.monsters,
-    playersTurnCompleted: gameState.playersTurnCompleted,
-    status: "paused",
-  })
 
   const remainingPlayerId = Object.keys(gameState.players).find(id => id !== String(leftPlayerId));
   const remainingPlayerUsername = gameState.players[remainingPlayerId];
 
+  let gameInstance;
+
+  // If the game was already paused, update an existing game object in the db
+  // Otherwise, create a new game entry in the database to store the current game state
+  if (activeGameIdObj.activeGameId) {
+    gameInstance = await Game.findByIdAndUpdate(
+      activeGameIdObj.activeGameId,
+      {
+        players: gameState.players,
+        monsters: gameState.monsters,
+        playersTurnCompleted: gameState.playersTurnCompleted,
+        status: "paused",
+      },
+      { new: true } // Return the updated document
+    );
+  } else {
+    gameInstance = await Game.create({
+      players: gameState.players,
+      monsters: gameState.monsters,
+      playersTurnCompleted: gameState.playersTurnCompleted,
+      status: "paused",
+    })
+
+    activeGameIdObj.activeGameId = String(gameInstance._id);
+  }
+
   // Link the game entry to the players in the database
-  await User.findOneAndUpdate({ username: leftPlayerUsername }, { gameId: gameEntry._id });
-  await User.findOneAndUpdate({ username: remainingPlayerUsername }, { gameId: gameEntry._id });
+  await User.findOneAndUpdate({ username: leftPlayerUsername }, { gameId: gameInstance._id });
+  await User.findOneAndUpdate({ username: remainingPlayerUsername }, { gameId: gameInstance._id });
 
   clearGameState(gameState, activeGameIdObj);
 

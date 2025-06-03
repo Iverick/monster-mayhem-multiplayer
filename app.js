@@ -148,6 +148,7 @@ wss.on("connection", (ws, req) => {
 
     // Handle game start event with a helper function
     if (messageData.type === "start") {
+      console.log("151. app. new game - activeGameId must be null: " + activeGameIdObj.activeGameId)
       await startGame (gameState, MONSTER_TYPES, userStats, wss);
     }
 
@@ -164,7 +165,7 @@ wss.on("connection", (ws, req) => {
 
   // Handle player disconnection
   ws.on("close", async () => {
-    await handleDisconnection(gameState, activeGameIdObj, playerId, ws, wss);
+    handleDisconnection(gameState, activeGameIdObj, playerId, ws, wss);
   });
 });
 
