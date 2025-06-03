@@ -8,6 +8,7 @@ const MongoStore = require("connect-mongo");
 const passport = require("./config/passportInit.js");
 const { PORT, MONGO_URI, SESSION_SECRET_KEY } = require("./config/config");
 const authRoutes = require("./routes/authRoutes.js");
+const gameRoutes = require("./routes/gameRoutes.js");
 const User = require("./models/User.js");
 const { 
   handleDisconnection,
@@ -60,23 +61,7 @@ app.get("/", async (req, res) => {
 });
 
 app.use("/", authRoutes);
-
-app.get("/game/:gameId", async (req, res) => {
-  if (!(req.isAuthenticated())) return res.redirect("/login");
-
-  const { gameId } = req.params;
-
-  res.render("game.ejs", { 
-    user: req.user,
-    gameId: gameId || null
-  });
-});
-
-app.get("/game", (req, res) => {
-  if (!(req.isAuthenticated())) return res.redirect("/login");
-
-  res.render("game.ejs", { user: req.user });
-});
+app.use("/game", gameRoutes);
 
 // WebSocket server setup
 const server = http.createServer(app);
