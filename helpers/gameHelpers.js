@@ -30,8 +30,11 @@ async function getUserStats(gameState, playerId, userStats) {
   const username = gameState.players[playerId];
   if (username) {
     const user = await User.findOne({ username });
-    user.games += 1;
-    await user.save();
+
+    if (!gameState.gameStart) {
+      user.games += 1;
+      await user.save();
+    }
 
     userStats[playerId] = {
       username,

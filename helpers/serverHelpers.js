@@ -30,23 +30,24 @@ function initializeNewGame(gameState, playerId, ws, wss) {
 
 // Helper function that allows start the game by initializing monsters and modifying player data in the database
 async function startGame(gameState, monsterTypes, userStats, wss) {
-  // Reset game state flags
-  gameState.gameOver = false;
-  gameState.gameStart = true;
-
   const playerIds = Object.keys(gameState.players);
   
   for (let index = 0; index < playerIds.length; index++) {
     const playerId = playerIds[index];
-    // Add monsters to the game state for each player
-    addMonsters(gameState, index, playerId, monsterTypes);
 
-    // Initializes player turn status
-    gameState.playersTurnCompleted[playerId] = false;
+    // If it's a new game add monster to the game state and initializes player turn status
+    if (!gameState.gameStart) {
+      addMonsters(gameState, index, playerId, monsterTypes);
+      gameState.playersTurnCompleted[playerId] = false;
+    }
 
     // Find the user by username, update their game stats, and store them in the userStats object
     await getUserStats(gameState, playerId, userStats);
   }
+
+  // Reset game state flags
+  gameState.gameOver = false;
+  gameState.gameStart = true;
   
   console.log("30. serverHelper. after initializing turn status: ", gameState);
 

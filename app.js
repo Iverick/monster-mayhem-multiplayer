@@ -64,6 +64,8 @@ app.get("/", async (req, res) => {
 app.use("/", authRoutes);
 
 app.get("/game/:gameId", async (req, res) => {
+  if (!(req.isAuthenticated())) return res.redirect("/login");
+
   const { gameId } = req.params;
 
   res.render("game.ejs", { 
@@ -158,55 +160,57 @@ wss.on("connection", (ws, req) => {
         return;
       }
 
-      // // Resume game logic
-      // if (pausedGameId) {
-      //   const pausedGame = await Game.findById(pausedGameId);
-
-      //   if (!pausedGame) {
-      //     ws.send("Game not found.");
-      //     ws.close();
-      //     return;
-      //   }
-
-      //   // First time resuming
-      //   if (!activeGameId) {
-      //     await resumeGame(gameState, pausedGame);
-      //     activeGameId = pausedGame._id.toString();
-      //   }
-
-      //   // Prevent other players from joining game to be resumed
-      //   if (pausedGame._id.toString() !== activeGameId) {
-      //     ws.send("You cannot join a game lobby right now.");
-      //     ws.close();
-      //     return;
-      //   }
-
-      //   // Check if username is one of the original players
-      //   const user = await User.findOne({ username });
-
-      //   // NOT GOING TO WORK
-      //   const isParticipant = pausedGame.players.some((playerId) =>
-      //     playerId.equals(user._id)
-      //   );
-
-      //   if (!isParticipant) {
-      //     ws.send("You are not a participant of this game.");
-      //     ws.close();
-      //     return;
-      //   }
-      // } else {
-      //   // Can't join a game if there is a resume game in progress
-      //   if (activeGameId) {
-      //     ws.send("You cannot start a new game while another is in progress.");
-      //     ws.close();
-      //     return;
-      //   }
-      // }
-
-      // Initialize player and add him to the gameState
+      // Initialize player
       const user = await User.findOne({ username });
       playerId = String(user._id);
+
+      // // Resume game logic
+      if (pausedGameId) {
+        const pausedGame = await Game.findById(pausedGameId);
+
+        if (!pausedGame) {
+          ws.send("Game not found.");
+          ws.close();
+          return;
+        }
+
+        // First time resuming
+        if (!activeGameId) {
+          await resumeGame(gameState, pausedGame);
+          activeGameId = String(pausedGame._id);
+        }
+
+        // Prevent other players from joining game to be resumed
+        if (String(pausedGame._id) !== activeGameId) {
+          ws.send("You cannot join a game lobby right now.");
+          ws.close();
+          return;
+        }
+
+        console.log("184. pausedGame.players: " + Array.from(pausedGame.players.keys()))
+        console.log("185. playerId: " + playerId)
+        const isParticipant = Array.from(pausedGame.players.keys()).some((participantId) =>
+          participantId === playerId
+        );
+
+        if (!isParticipant) {
+          ws.send("You are not a participant of this game.");
+          ws.close();
+          return;
+        }
+      } else {
+        // Can't join a game if there is a resume game in progress
+        if (activeGameId) {
+          ws.send("You cannot start a new game while another is in progress.");
+          ws.close();
+          return;
+        }
+      }
+
+      // Add new player to the gameState
       gameState.players[playerId] = username;
+      
+      console.log("212. resume game. gameState: " + Object.entries(gameState.players));
 
       initializeNewGame(gameState, playerId, ws, wss);
     }
@@ -242,8 +246,9 @@ server.listen(PORT, () => {
 async function resumeGame(gameState, gameDoc) {
   // Populate gameState with existing game data
   gameState.players = {}; // Reset players (rejoin fresh)
-  gameState.monsters = gameDoc.monsters;
-  gameState.playersTurnCompleted = gameDoc.playersTurnCompleted || {};
+  gameState.monsters = Object.fromEntries(gameDoc.monsters);
+  gameState.playersTurnCompleted = Object.fromEntries(gameDoc.playersTurnCompleted);
+  gameState.gameStart = true;
 
-  console.log("Resuming game with state:", gameState);
+  console.log("253. Resuming game with state:", gameState);
 }

@@ -371,7 +371,7 @@ window.onload = () => {
     } catch (e) {
       // Right now errors will be passed as a plain text and displayed as an alert
       alert(event.data);
-      window.location.href = "https://www.youtube.com/watch?v=dQw4w9WgXcQ&ab_channel=RickAstley";
+      window.location.href = "/";
     }
   };
 };

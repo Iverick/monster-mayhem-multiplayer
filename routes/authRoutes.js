@@ -7,28 +7,28 @@ const app = express.Router();
 
 // Display the login form
 app.get("/login", (req, res) => {
-  if (req.isAuthenticated()) return res.redirect("/game");
+  if (req.isAuthenticated()) return res.redirect("/");
 
   res.render("auth/login.ejs");
 });
 
 // Handle the login form submission with passport
 app.post("/login", passport.authenticate("local", {
-    successRedirect: "/game",
+    successRedirect: "/",
     failureRedirect: "/login"
   })
 );
 
 // Display the registration form
 app.get('/register', (req, res) => {
-  if (req.isAuthenticated()) return res.redirect("/game");
+  if (req.isAuthenticated()) return res.redirect("/");
 
   res.render("auth/register.ejs");
 });
 
 // Handle the registration form submission
 app.post("/register", async (req, res) => {
-  if (req.isAuthenticated()) return res.redirect("/game");
+  if (req.isAuthenticated()) return res.redirect("/");
 
   const { username, password } = req.body;
 
@@ -36,7 +36,7 @@ app.post("/register", async (req, res) => {
     const user = await User.register(new User({ username }), password);
     req.login(user, (err) => {
       if (err) return next(err);
-      return res.redirect("/game");
+      return res.redirect("/");
     });
   } catch (err) {
     // Handle registration errors (e.g., username already exists)
