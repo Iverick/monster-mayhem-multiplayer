@@ -8,7 +8,7 @@ const {
 } = require("./helpers/serverHelpers");
 const User = require("./models/User");
 
-function setupWebSocketServer(server, gameState, MONSTER_TYPES, userStats, activeGameIdObj) {
+function setupWebSocketServer(server, gameState, MONSTER_TYPES, monsterCount, userStats, activeGameIdObj) {
   const wss = new WebSocket.Server({ server });
 
   // Websocket connection handler
@@ -35,7 +35,7 @@ function setupWebSocketServer(server, gameState, MONSTER_TYPES, userStats, activ
       // Handle game start event with a helper function
       if (messageData.type === "start") {
         console.log("135. gameState object on game start: ", gameState);
-        await startGame (gameState, MONSTER_TYPES, userStats, wss);
+        await startGame (gameState, MONSTER_TYPES, monsterCount, userStats, wss);
       }
 
       // Handle monster movement

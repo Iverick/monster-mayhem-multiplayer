@@ -1,28 +1,31 @@
 const User = require("../models/User.js");
 
-// This function adds the monsters of each type and their location and stores them in the gameState object
-function addMonsters(gameState, playerIndex, playerId, monsterTypes) {
+// This function adds the specified number of monsters with a random type, adds their location 
+// and stores them in the gameState object
+function addMonsters(gameState, playerIndex, playerId, monsterTypes, monsterCount) {
   // Set the monster spawn column
   const isEven = parseInt(playerIndex) % 2 === 0;
   const col = isEven ? 0 : 9;
 
   // Set the monster spawn rows
   const maxRow = 9;
-  const spawnRows = getUniqueRandomRows(monsterTypes.length, maxRow);
+  const spawnRows = getUniqueRandomRows(monsterCount, maxRow);
 
-  monsterTypes.forEach((type, index) => {
-    const monsterId = `m_${playerId}-${type}`;
-    const row = spawnRows[index];
+  // Generate specified number of monsters with a random type
+  for (let i = 0; i < monsterCount; i++) {
+    const randomType = monsterTypes[Math.floor(Math.random() * monsterTypes.length)];
+    const monsterId = `m_${playerId}-${i}`;
+    const row = spawnRows[i];
     gameState.monsters[monsterId] = {
       playerId,
-      type,
+      type: randomType,
       position: {
         row,
         col,
       },
       hasMoved: false,
     };
-  })
+  }
 }
 
 // Function populates gameState with existing game data
@@ -31,8 +34,6 @@ function resumeGame(gameState, gameDoc) {
   gameState.monsters = Object.fromEntries(gameDoc.monsters);
   gameState.playersTurnCompleted = Object.fromEntries(gameDoc.playersTurnCompleted);
   gameState.gameStart = true;
-
-  // console.log("35. gameHelpers. resumeGame. Resuming game with state:", gameState);
 }
 
 // Helper function that fetches and modifies user stats from the database, and updates the userStats object

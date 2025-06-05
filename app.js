@@ -67,16 +67,17 @@ const gameState = {
   gameStart: false,
 };
 
-// const MONSTER_TYPES = ['vampire', 'werewolf', 'ghost'];
-// TODO: Use simplified line 90 simplified for testing
-const MONSTER_TYPES = ['vampire', 'werewolf'];
+// Use simplified line 71 simplified for testing
+// const MONSTER_TYPES = ['vampire', 'werewolf'];
+const MONSTER_TYPES = ['vampire', 'werewolf', 'ghost'];
+const monsterCount = 5;
 const userStats = {};
 const activeGameIdObj = {
   activeGameId: "",
 }
 
 // WebSocket server setup
-setupWebSocketServer(server, gameState, MONSTER_TYPES, userStats, activeGameIdObj);
+setupWebSocketServer(server, gameState, MONSTER_TYPES, monsterCount, userStats, activeGameIdObj);
 
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

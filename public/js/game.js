@@ -313,13 +313,14 @@ window.onload = () => {
 
       // // On sync message we update the allPlayers object and make sure all players drawn on the board
       if (message.type === "playerJoined") {
-        console.log("Player joined", message);
+        console.log("Player joined ", message);
         allPlayers = message.data.allPlayers;
         toggleControlsOverlay();
       }
 
       if (message.type === "start") {
-        // console.log("197: Start message data object", message.data);
+        console.log("Game start ", message);
+
         monsters = message.data.monsters;
         stats = message.data.stats;
         playersTurnCompleted = message.data.playersTurnCompleted;

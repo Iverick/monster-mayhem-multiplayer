@@ -95,7 +95,7 @@ function initializeNewGame(gameState, playerId, ws, wss) {
 }
 
 // Helper function that allows start the game by initializing monsters and modifying player data in the database
-async function startGame(gameState, monsterTypes, userStats, wss) {
+async function startGame(gameState, monsterTypes, monsterCount, userStats, wss) {
   const playerIds = Object.keys(gameState.players);
   
   for (let index = 0; index < playerIds.length; index++) {
@@ -103,7 +103,7 @@ async function startGame(gameState, monsterTypes, userStats, wss) {
 
     // If it's a new game add monster to the game state and initializes player turn status
     if (!gameState.gameStart) {
-      addMonsters(gameState, index, playerId, monsterTypes);
+      addMonsters(gameState, index, playerId, monsterTypes, monsterCount);
       gameState.playersTurnCompleted[playerId] = false;
     }
 
@@ -115,8 +115,6 @@ async function startGame(gameState, monsterTypes, userStats, wss) {
   gameState.gameOver = false;
   gameState.gameStart = true;
   
-  console.log("30. serverHelper. after initializing turn status: ", gameState);
-
   // Send start message to all players with the gameState object
   broadcastAll({ 
     type: "start",
@@ -134,8 +132,6 @@ function handleMove(messageData, gameState, activeGameIdObj, wss) {
   const { monsterId, position, userId } = messageData;
   const movingMonster = gameState.monsters[monsterId];
   if (!movingMonster) return;
-
-  console.log("49. serverHelpers. handleMove. Monster to be moved:", movingMonster);
 
   // Check if the monster belongs to the player
   if (String(movingMonster.playerId) !== String(userId)) {
