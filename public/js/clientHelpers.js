@@ -26,6 +26,18 @@ function isBlockedByEnemy (startRow, startCol, endRow, endCol) {
   return false;
 };
 
+/**
+ * Method checks if the destination hex already has a monster that belongs to the User
+ **/
+function findUserMonsterAt(monsters, userId, row, col) {
+  return Object.values(monsters).find(monsterData => {
+    return (
+      monsterData.position.row === row &&
+      monsterData.position.col === col &&
+      String(monsterData.playerId) === String(userId)
+    );
+  });
+}
 
 // This function is used to update the UI based on the number of players
 // If there are two players, the start button is enabled and waiting message is hidden

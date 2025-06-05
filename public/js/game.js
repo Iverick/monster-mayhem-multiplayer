@@ -159,6 +159,12 @@ function clearMonsters() {
     if (icon) {
       icon.remove();
     }
+
+    // Remove old event handlers
+    if (hex._clickHandler) {
+      hex.removeEventListener("click", hex._clickHandler);
+      delete hex._clickHandler;
+    }
   });
 }
 
@@ -173,7 +179,6 @@ function selectMonster(monsterId, hex) {
 
   // Prevent selecting a monster that has already moved
   if (selectedMonster.hasMoved) {
-    alert("You can move monster only once per turn!");
     return;
   }
 
@@ -265,6 +270,13 @@ function handleMoveClick(event) {
   const row = parseInt(target.dataset.row, 10);
   const col = parseInt(target.dataset.col, 10);
 
+  // Check if one of your own monsters already occupies (row, col)
+  const hexHasUserMonster = findUserMonsterAt(monsters, userId, row, col);
+  if (hexHasUserMonster) {
+    alert("Cannot move into a hex occupied by your own monster");
+    return;
+  }
+
   // Emit move event to the server with the selected monster ID and new position
   socket.send(JSON.stringify({
     type: "move",
@@ -282,6 +294,19 @@ function handleMoveClick(event) {
   setTimeout(() => {
     justMoved = false;
   }, 0);
+}
+
+/**
+ * Method checks if the destination hex already has a monster that belongs to the User
+ **/
+function findUserMonsterAt(monsters, userId, row, col) {
+  return Object.values(monsters).find(monsterData => {
+    return (
+      monsterData.position.row === row &&
+      monsterData.position.col === col &&
+      String(monsterData.playerId) === String(userId)
+    );
+  });
 }
 
 // startButton click handler that sends a message to the server to start the game
