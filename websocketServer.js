@@ -2,6 +2,7 @@ const WebSocket = require("ws");
 const {
   identifyPlayer,
   startGame,
+  handlePlayerLeftLobby,
   handleMove,
   handleEndTurn,
   handleDisconnection,
@@ -30,6 +31,12 @@ function setupWebSocketServer(server, gameState, MONSTER_TYPES, monsterCount, us
         playerId = String(user._id);
 
         await identifyPlayer(username, pausedGameId, gameState, activeGameIdObj, playerId, ws, wss);
+      }
+
+      // Player left lobby before the start of the game
+      if (messageData.type === "playerLeft") {
+        const leftPlayerId = messageData.userId;
+        handlePlayerLeftLobby(gameState, leftPlayerId, ws, wss);
       }
 
       // Handle game start event with a helper function

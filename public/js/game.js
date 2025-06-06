@@ -18,6 +18,7 @@ let justMoved = false;
 const board = document.getElementById("board");
 const waitingTurnMsg = document.getElementById("waiting-turn-msg");
 const startButton = document.getElementById('start-button');
+const leaveLobbyButton = document.getElementById("leave-lobby-button");
 const waitingMessage = document.getElementById('waiting-message');
 const playerStatsContainer = document.getElementById('player-stats');
 const gameHintsContainer = document.getElementById('game-hints');
@@ -275,7 +276,12 @@ startButton.addEventListener("click", () => {
 
 endTurnButton.addEventListener("click", () => {
   socket.send(JSON.stringify({ type: "endTurnButton" }));
-})
+});
+
+leaveLobbyButton.addEventListener("click", () => {
+  socket.send(JSON.stringify({ type: "playerLeft", userId }));
+  window.location.href = "/";
+});
 
 // This function is used to create a WebSocket connection on the browser window load
 // and listen for incoming messages
@@ -290,8 +296,8 @@ window.onload = () => {
         userId = message.id;
       }
 
-      // // On sync message we update the allPlayers object and make sure all players drawn on the board
-      if (message.type === "playerJoined") {
+      // Update the allPlayers object if there is a player joined of left the lobby
+      if (message.type === "playerJoined" || message.type === "playerLeftLobby") {
         console.log("Player joined ", message);
         allPlayers = message.data.allPlayers;
         toggleControlsOverlay();
@@ -330,7 +336,7 @@ window.onload = () => {
       // This is used when a player disconnects and we need to remove their character from the game
       if (message.type === "gamePaused") {
         alert(`Player ${message.leftPlayerUsername} left the game! You can restart it later.`);
-        window.location.href = "/me"; // Redirect to the profile page
+        window.location.href = "/"; // Redirect to the profile page
       }
 
       // On gameOver message we alert the user about the game result and redirect to the profile page

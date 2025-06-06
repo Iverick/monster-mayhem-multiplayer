@@ -77,6 +77,21 @@ async function identifyPlayer(username, pausedGameId, gameState, activeGameIdObj
   initializeNewGame(gameState, playerId, ws, wss);
 }
 
+/*
+ * Method removes a player with specified leftPlayerId from the gameState and notifies the remaining player about it
+ *
+ */
+function handlePlayerLeftLobby(gameState, leftPlayerId, ws, wss) {
+  delete gameState.players[leftPlayerId];
+
+  broadcastExcept(ws, {
+    type: "playerLeftLobby",
+    data: {
+      allPlayers: gameState.players,
+    },
+  }, wss);
+}
+
 function initializeNewGame(gameState, playerId, ws, wss) {
   // Send init message after registering the player and assingintg the username
   ws.send(JSON.stringify({ 
@@ -360,6 +375,7 @@ function broadcastExcept(exceptClient, message, wss) {
 module.exports = {
   startGame,
   handleMove,
+  handlePlayerLeftLobby,
   handleEndTurn,
   handleDisconnection,
   getUsernameById,
