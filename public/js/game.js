@@ -97,7 +97,6 @@ function drawMonsters() {
 
   for (const id in monsters) {
     const { playerId: ownerId, type, position, hasMoved } = monsters[id];
-    // console.log("151: Monster data", `{ownerId: ${ownerId}, type: ${type}, position: ${position}}`);
     const hex = document.querySelector(
       `.hex[data-row="${position.row}"][data-col="${position.col}"]`
     );

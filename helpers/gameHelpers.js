@@ -84,7 +84,7 @@ function startNewRound(gameState) {
     monster.hasMoved = false; 
   });
 
-  console.log("72. gameHelpers. startNewRound. All players completed their moves. Starting new round...");
+  console.log("87. gameHelpers. startNewRound. All players completed their moves. Starting new round...");
 }
 
 // Function processes the collision between movingMonster and another monster that belongs to a different player

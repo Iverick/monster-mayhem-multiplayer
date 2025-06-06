@@ -143,14 +143,13 @@ async function startGame(gameState, monsterTypes, monsterCount, userStats, wss) 
 }
 
 function handleMove(messageData, gameState, activeGameIdObj, wss) {
-  console.log("123. Player moved:", messageData);
+  console.log("146. serverHelpers. Player moved:", messageData);
   const { monsterId, position, userId } = messageData;
   const movingMonster = gameState.monsters[monsterId];
   if (!movingMonster) return;
 
   // Check if the monster belongs to the player
   if (String(movingMonster.playerId) !== String(userId)) {
-    console.log(`68. serverHelpers. handleMove. Player ${userId} tried to move monster they don't own.`);
     return;
   }
 
@@ -227,7 +226,6 @@ async function handleDisconnection (gameState, activeGameIdObj, leftPlayerId = p
 
 // Function stores the paused game state in the database and notifies the remaining player
 async function savePausedGame(gameState, activeGameIdObj, leftPlayerId, ws, wss) {
-  console.log("219. serverHelpers. savePausedgame called!")
   const leftPlayerUsername = gameState.players[leftPlayerId];
   gameState.gameOver = true;
 
@@ -293,8 +291,6 @@ function checkGameOver(gameState, activeGameIdObj, movingUserId, wss) {
   const activePlayers = remainingPlayers.filter(
     playerId => playerMonsterCounts[playerId] > 0
   );
-
-  console.log("202. checkGameOver. Active players with monsters:", activePlayers);
 
   // If one or no players remain with monsters, declare the game over and set a winner of the game
   if (activePlayers.length < 2 && !gameState.gameOver) {

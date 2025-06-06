@@ -41,7 +41,6 @@ function setupWebSocketServer(server, gameState, MONSTER_TYPES, monsterCount, us
 
       // Handle game start event with a helper function
       if (messageData.type === "start") {
-        console.log("135. gameState object on game start: ", gameState);
         await startGame (gameState, MONSTER_TYPES, monsterCount, userStats, wss);
       }
 
