@@ -75,8 +75,6 @@ function setupBoard() {
 
 // This function is used to display player stats in the child components of the declared player-stats placeholder
 function displayPlayerStats() {
-  console.log("78. stats: ", stats);
-
   Object.keys(stats).forEach((id, index) => {
     const playerStats = stats[id];
     const position = index % 2 === 0 ? "even" : "odd";
@@ -90,20 +88,6 @@ function displayPlayerStats() {
 
   // Call this function to make player-stats placeholder visible
   toggleStatsVisibility();
-}
-
-function displayGameHints() {
-  const playerIndex = playerIndices.indexOf(userId); 
-  const playerColor = playerIndex % 2 === 0 ? "red" : "blue";
-  const playerColorIndicator = document.getElementById("player-color-indicator");
-  playerColorIndicator.textContent = `${playerColor}`;
-  playerColorIndicator.style.color = `${playerColor}`;
-
-  toggleHintsVisibility();
-}
-
-function displayEndTurnButton() {
-  endTurnButtonContainer.style.display = "block";
 }
 
 // This function is used to draw monsters on the board
@@ -170,7 +154,6 @@ function clearMonsters() {
 
 function selectMonster(monsterId, hex) {
   // If the monster is already selected, deselect it and return
-  // console.log("123. justMoved check: ", justMoved);
   if (justMoved) {
     return;
   }
@@ -182,10 +165,6 @@ function selectMonster(monsterId, hex) {
     return;
   }
 
-  // console.log("128. Monster selected:", monsters[monsterId]);
-  // console.log("129. ID of previously selected monster:", selectedMonsterId);
-  // console.log("130. Selecting the same monster: ", selectedMonsterId === monsterId);
-
   if (selectedMonsterId === monsterId) {
     deselectMonster();
     clearPathHighlights();
@@ -196,8 +175,6 @@ function selectMonster(monsterId, hex) {
   clearPathHighlights();
 
   selectedMonsterId = monsterId;
-  // console.log("141. Monsters object: ", monsters);
-  // console.log("142. selectedMonsterId: ", selectedMonsterId);
   const { position } = selectedMonster;
   hex.classList.add("monster-selected");
 
@@ -258,14 +235,9 @@ function clearPathHighlights() {
 }
 
 function handleMoveClick(event) {
-  console.log("214. Move clicked");
-  console.log("237. monsters on move click:", monsters);
-
   const target = event.currentTarget;
   if (!target.classList.contains("highlight-path") || !selectedMonsterId) return;
   
-  // console.log("218. Move clicked");
-
   // Get the row and column of the clicked hexagon
   const row = parseInt(target.dataset.row, 10);
   const col = parseInt(target.dataset.col, 10);
@@ -296,19 +268,6 @@ function handleMoveClick(event) {
   }, 0);
 }
 
-/**
- * Method checks if the destination hex already has a monster that belongs to the User
- **/
-function findUserMonsterAt(monsters, userId, row, col) {
-  return Object.values(monsters).find(monsterData => {
-    return (
-      monsterData.position.row === row &&
-      monsterData.position.col === col &&
-      String(monsterData.playerId) === String(userId)
-    );
-  });
-}
-
 // startButton click handler that sends a message to the server to start the game
 startButton.addEventListener("click", () => {
   socket.send(JSON.stringify({ type: "start", id: userId }));
@@ -324,11 +283,6 @@ window.onload = () => {
   socket.onmessage = (event) => {
     try {
       const message = JSON.parse(event.data);
-
-      console.log("277. Username check:", username);
-      console.log("278. userId check:", userId);
-      console.log("279. allPlayers check:", allPlayers);
-      console.log("280. monsters on receiving message:", monsters);
 
       // On init message we initialize client with its userId
       if (message.type === "init") {
@@ -350,7 +304,6 @@ window.onload = () => {
         stats = message.data.stats;
         playersTurnCompleted = message.data.playersTurnCompleted;
         playerIndices = Object.keys(allPlayers);
-        console.log("310. onStart playersTurnCompleted: ", playersTurnCompleted);
 
         //Remove overlay here so it no longer displayed for all players
         document.getElementById('game-controls').style.display = 'none';
@@ -403,8 +356,6 @@ window.onload = () => {
 };
 
 socket.onopen = () => {
-  console.log("372: user: " + username);
-  console.log("376: user: " + gameId);
   socket.send(JSON.stringify({
     type: "identify",
     username,

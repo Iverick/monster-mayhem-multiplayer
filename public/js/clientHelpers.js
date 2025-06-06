@@ -14,7 +14,7 @@ function isBlockedByEnemy (startRow, startCol, endRow, endCol) {
     const occupied = Object.values(monsters).some(monster => 
       monster.position.row === r &&
       monster.position.col === c &&
-      parseInt(monster.playerId) !== parseInt(userId)
+      String(monster.playerId) !== String(userId)
     );
     
     if (occupied) return true;
@@ -67,9 +67,6 @@ function toggleHintsVisibility() {
 
 // Helper function to toggle the board and waiting turn message styles based on whether the player has completed their turn
 function toggleBoardAvailability() {
-  // console.log("277. toggleBoardDisplay called");
-  // console.log(`278. Updated playersTurnCompleted: ${playersTurnCompleted[userId]} for local player with userID ${userId}`);
-
   if (playersTurnCompleted[userId]) {
     board.style.opacity = "0.4";
     waitingTurnMsg.textContent = "Waiting for other players to finish their turn...";
@@ -83,4 +80,18 @@ function toggleBoardAvailability() {
 
 function toggleEndButtonAvailability() {
   playersTurnCompleted[userId] ? endTurnButton.disabled = true : endTurnButton.disabled = false;
+}
+
+function displayGameHints() {
+  const playerIndex = playerIndices.indexOf(userId); 
+  const playerColor = playerIndex % 2 === 0 ? "red" : "blue";
+  const playerColorIndicator = document.getElementById("player-color-indicator");
+  playerColorIndicator.textContent = `${playerColor}`;
+  playerColorIndicator.style.color = `${playerColor}`;
+
+  toggleHintsVisibility();
+}
+
+function displayEndTurnButton() {
+  endTurnButtonContainer.style.display = "block";
 }
