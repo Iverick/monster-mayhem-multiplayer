@@ -110,7 +110,7 @@ function initializeNewGame(gameState, playerId, ws, wss) {
 }
 
 // Helper function that allows start the game by initializing monsters and modifying player data in the database
-async function startGame(gameState, monsterTypes, monsterCount, userStats, wss) {
+async function startGame(gameState, monsterTypes, monsterCount, userStats, activeGameIdObj, wss) {
   const playerIds = Object.keys(gameState.players);
   
   for (let index = 0; index < playerIds.length; index++) {
@@ -124,6 +124,18 @@ async function startGame(gameState, monsterTypes, monsterCount, userStats, wss) 
 
     // Find the user by username, update their game stats, and store them in the userStats object
     await getUserStats(gameState, playerId, userStats);
+  }
+
+  // If this is a new game create a new game instance
+  if (!activeGameIdObj.activeGameId) {
+    gameInstance = await Game.create({
+      players: gameState.players,
+      monsters: {},
+      playersTurnCompleted: {},
+      status: "active",
+    });
+
+    activeGameIdObj.activeGameId = String(gameInstance._id);
   }
 
   // Reset game state flags
@@ -234,29 +246,17 @@ async function savePausedGame(gameState, activeGameIdObj, leftPlayerId, ws, wss)
 
   let gameInstance;
 
-  // If the game was already paused, update an existing game object in the db
-  // Otherwise, create a new game entry in the database to store the current game state
-  if (activeGameIdObj.activeGameId) {
-    gameInstance = await Game.findByIdAndUpdate(
-      activeGameIdObj.activeGameId,
-      {
-        players: gameState.players,
-        monsters: gameState.monsters,
-        playersTurnCompleted: gameState.playersTurnCompleted,
-        status: "paused",
-      },
-      { new: true } // Return the updated document
-    );
-  } else {
-    gameInstance = await Game.create({
+  // Update an existing game object in the db
+  gameInstance = await Game.findByIdAndUpdate(
+    activeGameIdObj.activeGameId,
+    {
       players: gameState.players,
       monsters: gameState.monsters,
       playersTurnCompleted: gameState.playersTurnCompleted,
       status: "paused",
-    })
-
-    activeGameIdObj.activeGameId = String(gameInstance._id);
-  }
+    },
+    { new: true } // Return the updated document
+  );
 
   // Link the game entry to the players in the database
   await User.findOneAndUpdate({ username: leftPlayerUsername }, { gameId: gameInstance._id });
@@ -317,17 +317,15 @@ async function processGameOver(gameState, activeGameIdObj, activePlayers, moving
   await User.findOneAndUpdate({ username: winnerUsername }, { $inc: { wins: 1 } });
   await User.findOneAndUpdate({ username: loserUsername }, { $inc: { losses: 1 } });
 
-  // Update game status in DB and clear gameId for both users if the game was resumed 
-  if (activeGameIdObj.activeGameId) {
-    await Game.findByIdAndUpdate(activeGameIdObj.activeGameId, {
-      status: "finished",
-    });
+  // Update game status in DB and clear gameId for both users 
+  await Game.findByIdAndUpdate(activeGameIdObj.activeGameId, {
+    status: "finished",
+  });
 
-    await User.updateMany(
-      { username: { $in: [winnerUsername, loserUsername] } },
-      { $unset: { gameId: "" } },
-    );
-  }
+  await User.updateMany(
+    { username: { $in: [winnerUsername, loserUsername] } },
+    { $unset: { gameId: "" } },
+  );
 
   // Reset game state
   gameState.gameOver = true;
