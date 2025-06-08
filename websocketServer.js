@@ -36,7 +36,7 @@ function setupWebSocketServer(server, gameState, MONSTER_TYPES, monsterCount, us
       // Player left lobby before the start of the game
       if (messageData.type === "playerLeft") {
         const leftPlayerId = messageData.userId;
-        handlePlayerLeftLobby(gameState, leftPlayerId, ws, wss);
+        handlePlayerLeftLobby(gameState, leftPlayerId, activeGameIdObj, ws, wss);
       }
 
       // Handle game start event with a helper function

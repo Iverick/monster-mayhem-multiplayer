@@ -81,8 +81,13 @@ async function identifyPlayer(username, pausedGameId, gameState, activeGameIdObj
  * Method removes a player with specified leftPlayerId from the gameState and notifies the remaining player about it
  *
  */
-function handlePlayerLeftLobby(gameState, leftPlayerId, ws, wss) {
+function handlePlayerLeftLobby(gameState, leftPlayerId, activeGameIdObj, ws, wss) {
   delete gameState.players[leftPlayerId];
+
+  // Clear game state is lobby is empty
+  if (!Object.values(gameState.players).length) {
+    clearGameState(gameState, activeGameIdObj);
+  }
 
   broadcastExcept(ws, {
     type: "playerLeftLobby",
@@ -319,6 +324,8 @@ async function processGameOver(gameState, activeGameIdObj, activePlayers, moving
 
   // Update game status in DB and clear gameId for both users 
   await Game.findByIdAndUpdate(activeGameIdObj.activeGameId, {
+    monsters: gameState.monsters,
+    playersTurnCompleted: gameState.playersTurnCompleted,
     status: "finished",
   });
 

@@ -4,9 +4,9 @@ const mongoose = require("mongoose");
 const session = require("express-session");
 const MongoStore = require("connect-mongo");
 
-const setupWebSocketServer = require("./websocketServer");
+const setupWebSocketServer = require("./websocketServer.js");
 const passport = require("./config/passportInit.js");
-const { PORT, MONGO_URI, SESSION_SECRET_KEY } = require("./config/config");
+const { PORT, MONGO_URI, SESSION_SECRET_KEY } = require("./config/config.js");
 const authRoutes = require("./routes/authRoutes.js");
 const gameRoutes = require("./routes/gameRoutes.js");
 const User = require("./models/User.js");
