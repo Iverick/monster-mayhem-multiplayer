@@ -162,47 +162,44 @@ body {
 
 /* Styling board */
 .board {
-  margin-top: 60px;
+  margin-top: 180px;
   gap: 5px;
   padding: 20px;
 }
 
 .row {
   display: flex;
-  /* This style makes hexagon rows look seamless without gaps */
-  height: 38px;
+  height: auto;
 }
 
-.odd {
-  /* Moves odd rows left so there are no gaps between hexagons */
-  margin-left: 25px;
-}
-
-.hex {
-  width: 50px;
-  height: 50px;
-  /* The following style makes hex elements look like hexagons instead of squares */
-  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+.tile {
+  width: 40px;
+  height: 40px;
   background-color: #ccc;
   text-align: center;
-  line-height: 50px;
+  line-height: 40px;
   font-size: 14px;
   color: #333;
   cursor: pointer;
+  border: 1px solid #999;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.hex.character {
+.tile.character {
   background-color: #ff5722;
   color: white;
 }
 
-.hex.highlight-path {
+.tile.highlight-path {
   background-color: #ffeb3b;
   opacity: 0.8;
   cursor: pointer;
 }
 
-.hex:hover {
+.tile:hover {
   background-color: white;
 }
 
@@ -211,7 +208,7 @@ body {
   color: white;
 }
 
-.hex.character:hover {
+.tile.character:hover {
   background-color: #ffa68a;
   color: white;
 }

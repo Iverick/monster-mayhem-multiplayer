@@ -37,15 +37,13 @@ const cols = 10;
 
 const socket = new WebSocket(`ws://${window.location.host}`);
 
-// This function used to create a single hex div element
-function createHex(row, col) {
-  const hex = document.createElement("div");
-  hex.classList.add("hex");
-  hex.dataset.row = row;
-  hex.dataset.col = col;
-  hex.textContent = ``;
-
-  return hex;
+// This function used to create a single square div element
+function createTile(row, col) {
+  const tile = document.createElement("div");
+  tile.classList.add("tile");
+  tile.dataset.row = row;
+  tile.dataset.col = col;
+  return tile;
 }
 
 // This is the main function of the script
@@ -56,17 +54,11 @@ function setupBoard() {
     const rowElement = document.createElement("div");
     rowElement.classList.add("row");
 
-    // Apply a different stylesheet if the row is odd
-    // This ensures there are no gaps between hexagons
-    if (row % 2 != 0) {
-      rowElement.classList.add("odd");
-    }
-
-    // This loop used to add hexagons to each row using createHex function
+    // This loop used to add squares to each row using createHex function
     // Number of hexagons equals the declared number of columns
     for (let col = 0; col < cols; col++) {
-      const hex = createHex(row, col);
-      rowElement.appendChild(hex);
+      const tile = createTile(row, col);
+      rowElement.appendChild(tile);
     }
 
     // Append each row to the root element
@@ -98,7 +90,7 @@ function drawMonsters() {
   for (const id in monsters) {
     const { playerId: ownerId, type, position, hasMoved } = monsters[id];
     const hex = document.querySelector(
-      `.hex[data-row="${position.row}"][data-col="${position.col}"]`
+      `.tile[data-row="${position.row}"][data-col="${position.col}"]`
     );
     if (hex) {
       const playerIndex = playerIndices.indexOf(ownerId); 
@@ -132,27 +124,27 @@ function drawMonsters() {
 
 // This function is used to clear all monsters from the board
 function clearMonsters() {
-  const hexes = document.querySelectorAll(".hex");
+  const tiles = document.querySelectorAll(".tile");
 
-  hexes.forEach(hex => {
-    // Remove all monster-related classes and icons from the hexagon grid
-    hex.classList.remove("monster", "player-even", "player-odd", "monster-selected", "monster-moved");
+  tiles.forEach(tile => {
+    // Remove all monster-related classes and icons from the square grid
+    tile.classList.remove("monster", "player-even", "player-odd", "monster-selected", "monster-moved");
 
     // Remove any monster icons
-    const icon = hex.querySelector("div.monster-icon");
+    const icon = tile.querySelector("div.monster-icon");
     if (icon) {
       icon.remove();
     }
 
     // Remove old event handlers
-    if (hex._clickHandler) {
-      hex.removeEventListener("click", hex._clickHandler);
-      delete hex._clickHandler;
+    if (tile._clickHandler) {
+      tile.removeEventListener("click", tile._clickHandler);
+      delete tile._clickHandler;
     }
   });
 }
 
-function selectMonster(monsterId, hex) {
+function selectMonster(monsterId, tile) {
   // If the monster is already selected, deselect it and return
   if (justMoved) {
     return;
@@ -176,7 +168,7 @@ function selectMonster(monsterId, hex) {
 
   selectedMonsterId = monsterId;
   const { position } = selectedMonster;
-  hex.classList.add("monster-selected");
+  tile.classList.add("monster-selected");
 
   // Call the highlightValidPath function to highlight the valid path for the selected monster
   highlightValidPath(position.row, position.col);
@@ -189,9 +181,9 @@ function deselectMonster() {
 
   if (selectedMonsterId) {
     const { position } = monsters[selectedMonsterId];
-    const hex = document.querySelector(`.hex[data-row="${position.row}"][data-col="${position.col}"]`);
-    if (hex) {
-      hex.classList.remove("monster-selected");
+    const tile = document.querySelector(`.tile[data-row="${position.row}"][data-col="${position.col}"]`);
+    if (tile) {
+      tile.classList.remove("monster-selected");
     }
   }
 
@@ -216,10 +208,10 @@ function highlightValidPath(row, col) {
 
       // Highlight hexes that are valid moves and assign it click event to move the monster
       if (isValidMove && !isBlockedByEnemy(row, col, r, c)) {
-        const hex = document.querySelector(`.hex[data-row="${r}"][data-col="${c}"]`);
-        if (hex) {
-          hex.classList.add("highlight-path");
-          hex.addEventListener("click", handleMoveClick);
+        const tile = document.querySelector(`.tile[data-row="${r}"][data-col="${c}"]`);
+        if (tile) {
+          tile.classList.add("highlight-path");
+          tile.addEventListener("click", handleMoveClick);
         }
       }
     }
@@ -228,9 +220,9 @@ function highlightValidPath(row, col) {
 
 // Function removes highlight-path class from hexes
 function clearPathHighlights() {
-  document.querySelectorAll(".highlight-path").forEach((hex) => {
-    hex.classList.remove("highlight-path");
-    hex.removeEventListener("click", handleMoveClick);
+  document.querySelectorAll(".highlight-path").forEach((tile) => {
+    tile.classList.remove("highlight-path");
+    tile.removeEventListener("click", handleMoveClick);
   });
 }
 
@@ -243,9 +235,9 @@ function handleMoveClick(event) {
   const col = parseInt(target.dataset.col, 10);
 
   // Check if one of your own monsters already occupies (row, col)
-  const hexHasUserMonster = findUserMonsterAt(monsters, userId, row, col);
-  if (hexHasUserMonster) {
-    alert("Cannot move into a hex occupied by your own monster");
+  const tileHasUserMonster = findUserMonsterAt(monsters, userId, row, col);
+  if (tileHasUserMonster) {
+    alert("Cannot move into a tile occupied by your own monster");
     return;
   }
 

@@ -1,3 +1,10 @@
+// Link to the game presentation 
+// https://drive.google.com/drive/folders/1SRma7WWVhOcu2NM2FFLzzvDPjziV998x?usp=drive_link
+
+// Github links 
+// https://github.com/CCT-Dublin/t3-integrated-ca1-Iverick  
+// https://github.com/CCT-Dublin/t3-integrated-ca1-Iverick/issues
+
 const express = require("express");
 const http = require("http");
 const mongoose = require("mongoose");

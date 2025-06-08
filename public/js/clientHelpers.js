@@ -4,13 +4,13 @@ function isBlockedByEnemy (startRow, startCol, endRow, endCol) {
   const dRow = Math.sign(endRow - startRow);
   const dCol = Math.sign(endCol - startCol);
 
-  // Calculate the first hexagon in the path of the start position
+  // Calculate the first tile in the path of the start position
   let r = startRow + dRow;
   let c = startCol + dCol;
 
-  // Loop through the hexagons in the path until we reach the end position
+  // Loop through the tiles in the path until we reach the end position
   while (r !== endRow || c !== endCol) {
-    // Check if the hexagon is occupied by an enemy monster
+    // Check if the tile is occupied by an enemy monster
     const occupied = Object.values(monsters).some(monster => 
       monster.position.row === r &&
       monster.position.col === c &&
@@ -27,7 +27,7 @@ function isBlockedByEnemy (startRow, startCol, endRow, endCol) {
 };
 
 /**
- * Method checks if the destination hex already has a monster that belongs to the User
+ * Method checks if the destination tile already has a monster that belongs to the User
  **/
 function findUserMonsterAt(monsters, userId, row, col) {
   return Object.values(monsters).find(monsterData => {
